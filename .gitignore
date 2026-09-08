@@ -1,0 +1,17 @@
+# Build & temporary outputs
+*.tmp
+*.temp
+*_protected.lua
+demo_*
+test_*
+*.bin
+*.log
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Node / Editor
+node_modules/
+.vscode/
+.idea/
