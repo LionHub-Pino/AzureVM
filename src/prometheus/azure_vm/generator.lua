@@ -42,10 +42,9 @@ end
 -- RUNTIME_DECODER template (Luraph v14.7+ verified multi-key cipher)
 -- =====================================================================
 local RUNTIME_DECODER = [=[
-local j,P,d,I,f,O,k,J,a,X,A,e,N,v=string.byte,string.sub,string.char,string.gsub,string.rep,setmetatable,pcall,type,tostring,assert,loadstring,unpack or table.unpack,string.pack or function(t,y)y=y%4294967296;return string.char(math.floor(y/16777216)%256,math.floor(y/65536)%256,math.floor(y/256)%256,y%256);end,{};
+local j,P,d,I,f,O,k,J,a,X,A,e,N,v=string.byte,string.sub,string.char,string.gsub,string.rep,setmetatable,pcall,type,tostring,assert,loadstring,unpack or table.unpack,function(t,y)y=y%4294967296;return string.char(math.floor(y/16777216)%256,math.floor(y/65536)%256,math.floor(y/256)%256,y%256);end,{};
 for c=0,255 do v[c]=d(c);end;
 local v_off=5;
-do local c={25656,{0x1B,0x4C,0x75,0x61,0x50},a(A)};for V,s in next,c do local c={k(A,V%2==0 and d(e(s))or s,nil,nil)};if c[1]and k(c[2])~=not c[3]then v_off=15.0;end;end;end;
 local c,V,s=(function(n)n=I(n,"z","!!!!!");return I(n,".....",O({},{__index=function(I,n)local _,x,l,H,Q=j(n,1,5);local y=(Q-33)+(H-33)*85+(l-33)*7225+(x-33)*614125+(_-33)*52200625;local _=N(">I4",y);I[n]=_;return _;end}));end)(P(__PAYLOAD,v_off)),{[0]=1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648,4294967296},0;
 X(c and J(c)=="string","Luraph decompression error: invalid payload (does your environment support load/loadstring?)");
 local _LPH_CHUNK_EXTRACT=function(x)local j_r,d_s="",#x;for I_i=1,d_s,7997 do local O_l=I_i+7996.0;if O_l>d_s then O_l=d_s;end;j_r=j_r..P(x,I_i,O_l);end;return j_r;end;
@@ -162,11 +161,6 @@ if J(debug)=="table" and debug.getinfo then
   local _info=debug.getinfo(1)
   if _info and _info.what and _info.what~="Lua" and _info.what~="main" and _info.what~="C" then return end
 end
-if J(isfunctionhooked)=="function" and (isfunctionhooked(pcall) or isfunctionhooked(loadstring)) then return end
-if J(islclosure)=="function" and (islclosure(pcall) or islclosure(loadstring)) then return end
-if J(debug)=="table" and debug.sethook then
-  pcall(function() debug.sethook() end)
-end
 if J(debug)=="table" and debug.traceback then
   local _tb=tostring(debug.traceback())
   if string.find(string.lower(_tb),"hook") or string.find(string.lower(_tb),"spy") then return end
@@ -217,25 +211,10 @@ __WRAP=function(pr,env,uv) return function(...) return __EXEC(pr,env,uv,...) end
 local __GENV=(getfenv and getfenv()) or _ENV or _G
 if _LPH_HOOK_GUARD then _LPH_HOOK_GUARD() end
 if J(debug)=="table" and debug.getinfo then
-  local _crit={pcall,type,tostring,j,P,d,I,A,X}
-  for _vi=1,#_crit do
-    local _inf=debug.getinfo(_crit[_vi])
-    if _inf and _inf.what and _inf.what~="C" and _inf.what~="[C]" then return end
-    if debug.getupvalue and debug.getupvalue(_crit[_vi],1) then return end
-  end
   local _info=debug.getinfo(1)
   if _info and _info.what and _info.what~="Lua" and _info.what~="main" and _info.what~="C" then return end
   local ok, res = pcall(debug.getinfo, 2, "f")
   if ok and res and res.func == __WRAP then return end
-end
-if J(isfunctionhooked)=="function" and (isfunctionhooked(pcall) or isfunctionhooked(loadstring)) then return end
-if J(islclosure)=="function" and (islclosure(pcall) or islclosure(loadstring)) then return end
-if J(debug)=="table" and debug.sethook then
-  local _ohk = debug.sethook
-  local ok, err = pcall(debug.sethook)
-  if not ok and type(err) == "string" and string.match(tostring(err), "hook") then return end
-  pcall(function() debug.sethook() end)
-  debug.sethook = _ohk
 end
 if J(debug)=="table" and debug.traceback then
   local _tb = tostring(debug.traceback())
