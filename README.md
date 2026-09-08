@@ -148,3 +148,4 @@ Dự án được phân phối dưới giấy phép **MIT License**.
 
 - **Prometheus Lua Obfuscator:** Bản quyền thuộc về [levno-710](https://github.com/prometheus-lua) (MIT License).
 - **Azure VM Additions & Cloaking:** Bản quyền thuộc về **Azure** (2026).
+Tuần Sau Tôi Sẽ Fix Thêm Bug Và Update thêm
