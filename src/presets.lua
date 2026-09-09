@@ -206,6 +206,7 @@ return {
 		PrettyPrint = false,
 		Seed = 0,
 		Steps = {
+			{ Name = "OpaquePredicates", Settings = { Threshold = 0.5, MaxPerBlock = 2 } },
 			{ Name = "ControlFlowFlattening", Settings = { Threshold = 1.0, MinStatements = 3, ShuffleStates = true } },
 			{ Name = "SplitStrings", Settings = {} },
 			{ Name = "EncryptStrings", Settings = {} },

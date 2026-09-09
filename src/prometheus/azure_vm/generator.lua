@@ -44,7 +44,7 @@ end
 local RUNTIME_DECODER = [=[
 local j,P,d,I,f,O,k,J,a,X,A,e,N,v=string.byte,string.sub,string.char,string.gsub,string.rep,setmetatable,pcall,type,tostring,assert,loadstring,unpack or table.unpack,function(t,y)y=y%4294967296;return string.char(math.floor(y/16777216)%256,math.floor(y/65536)%256,math.floor(y/256)%256,y%256);end,{};
 for c=0,255 do v[c]=d(c);end;
-local v_off=5;
+local v_off=5;do local _h={25656,{0x1B,0x4C,0x75,0x61,0x50},a(A)};for _V,_s in next,_h do local _c={k(A,_V%2==0 and d(e(_s))or _s,nil,nil)};if _c[1]and k(_c[2])~=not _c[3]then v_off=15.0;end;end;end;
 local c,V,s=(function(n)n=I(n,"z","!!!!!");return I(n,".....",O({},{__index=function(I,n)local _,x,l,H,Q=j(n,1,5);local y=(Q-33)+(H-33)*85+(l-33)*7225+(x-33)*614125+(_-33)*52200625;local _=N(">I4",y);I[n]=_;return _;end}));end)(P(__PAYLOAD,v_off)),{[0]=1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648,4294967296},0;
 X(c and J(c)=="string","Luraph decompression error: invalid payload (does your environment support load/loadstring?)");
 local _LPH_CHUNK_EXTRACT=function(x)local j_r,d_s="",#x;for I_i=1,d_s,7997 do local O_l=I_i+7996.0;if O_l>d_s then O_l=d_s;end;j_r=j_r..P(x,I_i,O_l);end;return j_r;end;
@@ -112,6 +112,7 @@ return proto,pos
 end
 local __BIN=__DECODE(c,__PAD,__BKEY)
 local __AST=(__READP(__BIN,1))
+__AST.rt=true
 ]=]
 
 -- =====================================================================
@@ -508,8 +509,8 @@ function Generator.emit(encoded_root, encoder_instance, options)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx)if(not %s[a])==(c~=0)then %s=%s+1 end end', D, O[26], R, R, PC, PC)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx)if(not %s[b])==(c~=0)then %s=%s+1 else %s[a]=%s[b]end end', D, O[27], R, R, PC, PC, R, R)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local g={} local n=(b==0)and(%s-a)or(b-1) for i=1,n do g[i]=%s[a+i] end local r=%s(%s[a](%s(g,1,n))) local l=r.n if c==0 then %s=a+l-1 for i=1,l do %s[a+i-1]=r[i] end else for i=1,c-1 do %s[a+i-1]=r[i] end end end', D, O[28], R, TOP, R, PK, R, UPK, TOP, R, R)
-    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local g={} local n=(b==0)and(%s-a)or(b-1) for i=1,n do g[i]=%s[a+i] end %s(0)return true,%s[a](%s(g,1,n))end', D, O[29], R, TOP, R, CL, R, UPK)
-    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) %s(0)local n=(b==0)and(%s-a+1)or(b-1) local r={}for i=1,n do r[i]=%s[a+i-1]end return true,%s(r,1,n)end', D, O[30], R, CL, TOP, R, UPK)
+    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local g={} local n=(b==0)and(%s-a)or(b-1) for i=1,n do g[i]=%s[a+i] end %s(0)if pr.rt then for i=1,#%s do %s[i]=0 end end return true,%s[a](%s(g,1,n))end', D, O[29], R, TOP, R, CL, INS, INS, R, UPK)
+    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) %s(0)if pr.rt then for i=1,#%s do %s[i]=0 end end local n=(b==0)and(%s-a+1)or(b-1) local r={}for i=1,n do r[i]=%s[a+i-1]end return true,%s(r,1,n)end', D, O[30], R, CL, INS, INS, TOP, R, UPK)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local s=%s[a+2]local x=%s[a]+s %s[a]=x local l=%s[a+1] if(s>0 and x<=l)or(s<=0 and x>=l)then %s=%s+sbx %s[a+3]=x end end', D, O[31], R, R, R, R, R, PC, PC, R)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x=%s[a]local s=%s[a+2]%s[a]=x-s %s=%s+sbx end', D, O[32], R, R, R, R, PC, PC)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local cb,s,var=%s[a],%s[a+1],%s[a+2] local r={cb(s,var)} for i=1,c do %s[a+2+i]=r[i]end if %s[a+3]~=nil then %s[a+2]=%s[a+3]else %s=%s+1 end end', D, O[33], R, R, R, R, R, R, R, R, PC, PC)
