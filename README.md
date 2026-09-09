@@ -71,6 +71,7 @@
 | **`Luraph15`** | AzureVM v15.2 Ultra | Chuỗi & Số + Decoy 1.2x | ⭐⭐⭐⭐⭐+ | VM v15 nâng cao, kiểm tra Call Stack Depth |
 | **`AzureGod`** | AzureVM v14.7 Classic | AST Pre-Mutation + VM | ⭐⭐⭐⭐⭐⭐ | Kết hợp biến đổi AST sâu trước khi nén vào VM |
 | **`AzureGod15`** | AzureVM v15.2 Ultra | Full AST Pipeline + VM v15 (Decoy 1.5x) | 👑 **Tối Thượng** | Chống Deobf và dịch ngược mức độ cao nhất |
+| **`AzureGodUltra`** | AzureVM v15.2 Ultra | CFF + OpaquePredicates + Strings + Numbers + VM v15.2 | 🔱 **Vô Địch** | Control Flow Flattening + Toán tử mờ tối thượng |
 
 ---
 
