@@ -16,4 +16,5 @@ return {
 	AddVararg = require("prometheus.steps.AddVararg"),
 	WatermarkCheck = require("prometheus.steps.WatermarkCheck"),
 	AzureVM = require("prometheus.steps.AzureVM"),
+	ControlFlowFlattening = require("prometheus.steps.ControlFlowFlattening"),
 }

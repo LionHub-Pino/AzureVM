@@ -24,7 +24,13 @@ local DECOY_STRINGS = {
     "debug.getinfo", "debug.sethook", "debug.traceback", "debug.getupvalue",
     "coroutine.wrap", "pcall", "select", "setfenv", "getfenv",
     "Integrity check failed", "Hook detected", "Protected by Luraph",
-    "Runtime signature mismatch", "LPH_SIGNATURE_VERIFIED"
+    "Runtime signature mismatch", "LPH_SIGNATURE_VERIFIED",
+    -- Roblox Engine Services & APIs
+    "ReplicatedStorage", "HttpService", "RunService", "TweenService",
+    "TeleportService", "UserInputService", "RenderStepped", "Heartbeat", "Stepped",
+    "FindFirstChild", "WaitForChild", "FireServer", "InvokeServer", "OnClientEvent",
+    "Destroy", "Clone", "Connect", "Disconnect", "Parent", "Position", "CFrame",
+    "Vector3", "CFrame.new", "Vector3.new", "Instance.new", "math.clamp"
 }
 
 -- =====================================================================
@@ -60,8 +66,17 @@ local function w64_double(v)
     return string.char(b[1],b[2],b[3],b[4],b[5],b[6],b[7],b[8])
 end
 
+local function mod_inverse_256(m)
+    for inv = 1, 255, 2 do
+        if (m * inv) % 256 == 1 then
+            return inv
+        end
+    end
+    return 1
+end
+
 -- Binary format per node:
---   [1B np][1B up][1B ms][1B iv]
+--   [1B np][1B up][1B ms][1B iv][1B om][1B oa]
 --   [4B num_ins][5B*num_ins instructions (40-bit each)]
 --   [4B num_ks][per const: 1B type + data]
 --     t=0: no extra data
@@ -75,6 +90,8 @@ local function serialize_binary(node)
     out[#out+1] = string.char(node.up or 0)
     out[#out+1] = string.char(node.ms or 0)
     out[#out+1] = string.char(node.iv or 0)
+    out[#out+1] = string.char(node.om or 1)
+    out[#out+1] = string.char(node.oa or 0)
 
     -- Instructions (40-bit / 5 bytes each)
     local ins = node.ins
@@ -228,12 +245,19 @@ end
 -- Encode prototype tree recursively
 -- =====================================================================
 function Encoder:encode_prototype(proto)
+    local op_mul
+    repeat op_mul = math.random(1, 255) until (op_mul % 2 == 1)
+    local op_add = math.random(0, 255)
+    local op_minv = mod_inverse_256(op_mul)
+
     local encoded = {
         s  = proto.source or "",
         np = proto.numParams or 0,
         up = proto.numUpvalues or 0,
         ms = proto.maxStackSize or 0,
         iv = proto.isVararg or 0,
+        om = op_minv,
+        oa = op_add,
         ks = {},
         ins = {},
         ps = {},
@@ -264,10 +288,12 @@ function Encoder:encode_prototype(proto)
         end
     end
 
-    -- Instructions with rolling keystream encryption & polymorphic field layout
+    -- Instructions with rolling keystream encryption & polymorphic field layout (State-Chained Feedback Cipher)
+    local prev_enc = 0
     for i, inst in ipairs(proto.instructions) do
         local std_op = inst.op
-        local rand_op = self.opcode_map[std_op] or std_op
+        local global_op = self.opcode_map[std_op] or std_op
+        local rand_op = (global_op * op_mul + op_add) % 256
         local a, b, c = inst.a, inst.b, inst.c
         -- iABx format opcodes: pack bx into b and c slots
         if std_op==1 or std_op==5 or std_op==7 or std_op==36
@@ -288,8 +314,9 @@ function Encoder:encode_prototype(proto)
             raw = rand_op + b * 256 + c * 131072 + a * 67108864
         end
 
-        local key = (self.seed + i * self.l_mult + self.l_add) % self.l_mod
+        local key = (self.seed + i * self.l_mult + self.l_add + prev_enc * 37) % self.l_mod
         encoded.ins[i] = (raw + key) % self.l_mod
+        prev_enc = encoded.ins[i]
     end
 
     -- Children

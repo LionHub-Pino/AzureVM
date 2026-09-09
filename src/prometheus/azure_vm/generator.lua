@@ -81,7 +81,9 @@ local np=j(bin,pos) pos=pos+1
 local up=j(bin,pos) pos=pos+1
 local ms=j(bin,pos) pos=pos+1
 local iv=j(bin,pos) pos=pos+1
-local proto={np=np,up=up,ms=ms,iv=iv,ins={},ks={},ps={}}
+local om=j(bin,pos) pos=pos+1
+local oa=j(bin,pos) pos=pos+1
+local proto={np=np,up=up,ms=ms,iv=iv,om=om,oa=oa,ins={},ks={},ps={}}
 local ni=__R32(bin,pos) pos=pos+4
 for i=1,ni do
 local a,b,c2,d2,e2=j(bin,pos,pos+4) pos=pos+5
@@ -117,10 +119,16 @@ local __AST=(__READP(__BIN,1))
 -- =====================================================================
 local VM_ENGINE = [=[
 local __WRAP
+local __POISON = 0
 local function __EXEC(pr,env,upvals,...)
-local __REG,__VARGS,__OPENUVS,__STOP,__IPC={},{...},{},0,1
+local __REG,__VARGS,__OPENUVS,__STOP,__IPC=(table.create and table.create(pr.ms or 64)) or {},{...},{},0,1
 local __VLEN=select('#',...)
 local __INSTR,__KONST,__PROTOS=pr.ins,pr.ks,pr.ps
+local __POM,__POA=pr.om,pr.oa
+local __CHKSUM, __ILEN = 0, #__INSTR
+if __ILEN > 16 then __ILEN = 16 end
+for i = 1, __ILEN do __CHKSUM = (__CHKSUM * 31 + __INSTR[i]) % 4294967296 end
+if __CHKSUM < 0 then return end
 for i=0,(pr.np or 0)-1 do __REG[i]=__VARGS[i+1] end
 __STOP=(pr.np or 0)-1
 local function __CLOSEUV(lim) for r,x in pairs(__OPENUVS) do if r>=lim then x[1]={x[1][x[2]]} x[2]=1 __OPENUVS[r]=nil end end end
@@ -139,14 +147,18 @@ local __CTR=0
 while true do
 __CTR=(__CTR+1)%1000
 local e=__INSTR[__IPC]
-local k=(__KSEED+__IPC*__KLM+__KLA)%__KMOD
+local prev_e=(__IPC>1)and(__INSTR[__IPC-1]or 0)or 0
+local k=(__KSEED+__IPC*__KLM+__KLA+prev_e*37)%__KMOD
+if __POISON>0 and (__CTR>25 or __IPC>15) then k=(k+__POISON*7919)%__KMOD end
 __IPC=__IPC+1
 local w=(e-k)%__KMOD
 if w<0 then w=w+__KMOD end
 local op,a,b,c,bx,sbx=__PARSE(w)
+op=((op-__POA)*__POM)%256
 if w == 13371337 then if _LPH_CRASH then _LPH_CRASH() end end
-if (__CTR > 8000) and ((__CTR * (__CTR + 1)) % 2 ~= 0) then __IPC = 0 end
+if (__CTR > 8000) and (((__CTR * (__CTR + 1)) % 2 ~= 0) or (((__IPC * (__IPC + 1)) % 2) ~= 0)) then __IPC = 0 end
 if (a > 255) and (a < 0) then a = 0 end
+if (bx and bx < -999999 and bx > 0) then return end
 local f=__DISP[op]
 if f then
 local r=__TPACK(f(__REG,a,b,c,bx,sbx))
@@ -157,21 +169,29 @@ end
 __WRAP=function(pr,env,uv) return function(...) return __EXEC(pr,env,uv,...) end end
 local __GENV=(getfenv and getfenv()) or _ENV or _G
 if _LPH_HOOK_GUARD then _LPH_HOOK_GUARD() end
+local _LPH_CANARY = O({}, { __index = function(_, k) return k end })
+if _LPH_CANARY[1337] ~= 1337 then __POISON = __POISON + 1 end
+local _LPH_STRMT = getmetatable and getmetatable("")
+if _LPH_STRMT and _LPH_STRMT.__index and _LPH_STRMT.__index ~= string then __POISON = __POISON + 2 end
+if ("lura" .. "ph") ~= "luraph" then __POISON = __POISON + 4 end
+local _c_ok, _c_err = pcall(select, 0)
+if not (_c_ok == false and type(_c_err) == "string" and string.find(_c_err, "range")) then __POISON = __POISON + 16 end
 if J(debug)=="table" and debug.getinfo then
   local _info=debug.getinfo(1)
-  if _info and _info.what and _info.what~="Lua" and _info.what~="main" and _info.what~="C" then return end
+  if _info and _info.what and _info.what~="Lua" and _info.what~="main" and _info.what~="C" then __POISON = __POISON + 32 end
 end
 if J(debug)=="table" and debug.traceback then
   local _tb=tostring(debug.traceback())
-  if string.find(string.lower(_tb),"hook") or string.find(string.lower(_tb),"spy") then return end
+  local _tbl=string.lower(_tb)
+  if string.find(_tbl,"hook") or string.find(_tbl,"spy") or string.find(_tbl,"deobf") or string.find(_tbl,"dump") or string.find(_tbl,"extractor") or string.find(_tbl,"disassembler") or string.find(_tbl,"tracer") or string.find(_tbl,"unluac") or string.find(_tbl,"luadec") then __POISON = __POISON + 128 end
 end
 if J(coroutine)=="table" and coroutine.wrap then
   local co=coroutine.wrap(function() return 0xCAFE end)
-  if not co or co()~=0xCAFE then return end
+  if not co or co()~=0xCAFE then __POISON = __POISON + 256 end
 end
 if getfenv then
   local _ef = getfenv(0)
-  if _ef and _ef._LPH_HOOK_GUARD and _ef._LPH_HOOK_GUARD ~= _LPH_HOOK_GUARD then return end
+  if _ef and _ef._LPH_HOOK_GUARD and _ef._LPH_HOOK_GUARD ~= _LPH_HOOK_GUARD then __POISON = __POISON + 512 end
 end
 local _LPH_LOAD = loadstring or load or function() end
 if _LPH_JIT_MAX then _LPH_JIT_MAX() end
@@ -192,14 +212,18 @@ local __CTR=0
 while true do
 __CTR=(__CTR+1)%1000
 local e=__INSTR[__IPC]
-local k=(__KSEED+__IPC*__KLM+__KLA)%__KMOD
+local prev_e=(__IPC>1)and(__INSTR[__IPC-1]or 0)or 0
+local k=(__KSEED+__IPC*__KLM+__KLA+prev_e*37)%__KMOD
+if __POISON>0 and (__CTR>25 or __IPC>15) then k=(k+__POISON*7919)%__KMOD end
 __IPC=__IPC+1
 local w=(e-k)%__KMOD
 if w<0 then w=w+__KMOD end
 local op,a,b,c,bx,sbx=__PARSE(w)
+op=((op-__POA)*__POM)%256
 if w == 13371337 then if _LPH_CRASH then _LPH_CRASH() end end
-if (__CTR > 8000) and ((__CTR * (__CTR + 1)) % 2 ~= 0) then __IPC = 0 end
+if (__CTR > 8000) and (((__CTR * (__CTR + 1)) % 2 ~= 0) or (((__IPC * (__IPC + 1)) % 2) ~= 0)) then __IPC = 0 end
 if (a > 255) and (a < 0) then a = 0 end
+if (bx and bx < -999999 and bx > 0) then return end
 local f=__DISP[op]
 if f then
 local r=__TPACK(f(__REG,a,b,c,bx,sbx))
@@ -210,23 +234,32 @@ end
 __WRAP=function(pr,env,uv) return function(...) return __EXEC(pr,env,uv,...) end end
 local __GENV=(getfenv and getfenv()) or _ENV or _G
 if _LPH_HOOK_GUARD then _LPH_HOOK_GUARD() end
+local _LPH_CANARY = O({}, { __index = function(_, k) return k end })
+if _LPH_CANARY[1337] ~= 1337 then __POISON = __POISON + 1 end
+local _LPH_STRMT = getmetatable and getmetatable("")
+if _LPH_STRMT and _LPH_STRMT.__index and _LPH_STRMT.__index ~= string then __POISON = __POISON + 2 end
+if ("lura" .. "ph") ~= "luraph" then __POISON = __POISON + 4 end
+if pcall(string.dump, pcall) or pcall(string.dump, select) or pcall(string.dump, tostring) or pcall(string.dump, type) then __POISON = __POISON + 8 end
+local _c_ok, _c_err = pcall(select, 0)
+if not (_c_ok == false and type(_c_err) == "string" and string.find(_c_err, "range")) then __POISON = __POISON + 16 end
 if J(debug)=="table" and debug.getinfo then
   local _info=debug.getinfo(1)
-  if _info and _info.what and _info.what~="Lua" and _info.what~="main" and _info.what~="C" then return end
+  if _info and _info.what and _info.what~="Lua" and _info.what~="main" and _info.what~="C" then __POISON = __POISON + 32 end
   local ok, res = pcall(debug.getinfo, 2, "f")
-  if ok and res and res.func == __WRAP then return end
+  if ok and res and res.func == __WRAP then __POISON = __POISON + 64 end
 end
 if J(debug)=="table" and debug.traceback then
   local _tb = tostring(debug.traceback())
-  if string.find(string.lower(_tb), "hook") or string.find(string.lower(_tb), "spy") or string.find(string.lower(_tb), "dump") then return end
+  local _tbl = string.lower(_tb)
+  if string.find(_tbl, "hook") or string.find(_tbl, "spy") or string.find(_tbl, "dump") or string.find(_tbl, "deobf") or string.find(_tbl, "extractor") or string.find(_tbl, "disassembler") or string.find(_tbl, "tracer") or string.find(_tbl, "profiler") or string.find(_tbl, "unluac") or string.find(_tbl, "luadec") then __POISON = __POISON + 128 end
 end
 if J(coroutine)=="table" and coroutine.wrap then
   local co = coroutine.wrap(function() return 0xCAFE end)
-  if not co or co()~=0xCAFE then return end
+  if not co or co()~=0xCAFE then __POISON = __POISON + 256 end
 end
 if getfenv then
   local _ef = getfenv(0)
-  if _ef and _ef._LPH_HOOK_GUARD and _ef._LPH_HOOK_GUARD ~= _LPH_HOOK_GUARD then return end
+  if _ef and _ef._LPH_HOOK_GUARD and _ef._LPH_HOOK_GUARD ~= _LPH_HOOK_GUARD then __POISON = __POISON + 512 end
 end
 local _LPH_LOAD = loadstring or load or function() end
 if _LPH_JIT_ULTRA then _LPH_JIT_ULTRA() end
@@ -281,10 +314,25 @@ local function gen_decoys(disp_name, reg_name, used_ops, density)
         function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) if %s[a]~=nil then local _=%s[a] end end', disp_name, op, R, R, R) end,
         function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local _=bx%%512 if _>255 then _=_-256 end end', disp_name, op, R) end,
         function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local _=sbx if _<0 then _=-_ end end', disp_name, op, R) end,
+        -- Authentic Opcode Imitation Decoys (Ultra-Realistic)
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local t=%s[b] if type(t)=="table" and c<256 then %s[a]=t[%s[c]] end end', disp_name, op, R, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local t=%s[a] if type(t)=="table" and b<256 then t[%s[b]]=%s[c] end end', disp_name, op, R, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x,y=%s[b],%s[c] if type(x)=="number" and type(y)=="number" then %s[a]=x+y end end', disp_name, op, R, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x,y=%s[b],%s[c] if type(x)=="number" and type(y)=="number" then %s[a]=x-y end end', disp_name, op, R, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x,y=%s[b],%s[c] if type(x)=="number" and type(y)=="number" then %s[a]=x*y end end', disp_name, op, R, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local s1,s2=%s[b],%s[c] if type(s1)=="string" and type(s2)=="string" then %s[a]=s1..s2 end end', disp_name, op, R, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) if %s[b] then %s[a]=true else %s[a]=false end end', disp_name, op, R, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x=%s[b] if type(x)=="number" then %s[a]=-x end end', disp_name, op, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x=%s[b] if type(x)=="table" or type(x)=="string" then %s[a]=#x end end', disp_name, op, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x=%s[b] if type(x)=="number" then %s[a]=math.floor(x) end end', disp_name, op, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local fn=%s[a] if type(fn)=="function" and b<0 then pcall(fn) end end', disp_name, op, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) if bx==0 then %s[a]={} end end', disp_name, op, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x=%s[b] if type(x)=="number" and c>0 then %s[a]=x%%c end end', disp_name, op, R, R, R) end,
+        function(op, R) return string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local t=type(%s[b]) if t=="string" then %s[a]=t end end', disp_name, op, R, R, R) end,
     }
     density = tonumber(density) or 1.0
     if density < 0 then density = 0 elseif density > 2 then density = 2 end
-    local count = math.floor(math.random(20, 36) * density + 0.5)
+    local count = math.floor(math.random(25, 45) * density + 0.5)
     for _ = 1, count do
         local op
         repeat op = math.random(1, 250) until not used_ops[op]
@@ -321,7 +369,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
         "r32","r16","r64","decode","readp","str_key","payload","pad_v","bkey",
         "bin_v","ast_v","wrap","exec","reg","vargs","openuvs","stop","ipc",
         "vlen","instr","konst","protos","closeuv","kseed","klm","kla","kmod",
-        "disp","ctr","genv","loader","parse"
+        "disp","ctr","genv","loader","parse","poison","preve","pom","poa"
     }
     for _, k in ipairs(var_keys) do V[k] = ng() end
 
@@ -401,6 +449,9 @@ function Generator.emit(encoded_root, encoder_instance, options)
     engine = engine:gsub("__VM_LMUL",    function() return lmul_s end)
     engine = engine:gsub("__VM_LADD",    function() return ladd_s end)
     engine = engine:gsub("__VM_LMOD",    function() return lmod_s end)
+    engine = engine:gsub("__POISON",     function() return V.poison end)
+    engine = engine:gsub("__POM",        function() return V.pom end)
+    engine = engine:gsub("__POA",        function() return V.poa end)
     code_parts[#code_parts+1] = minify(engine)
 
     -- === Dispatch Table (with polymorphic names) ===
@@ -462,9 +513,9 @@ function Generator.emit(encoded_root, encoder_instance, options)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local s=%s[a+2]local x=%s[a]+s %s[a]=x local l=%s[a+1] if(s>0 and x<=l)or(s<=0 and x>=l)then %s=%s+sbx %s[a+3]=x end end', D, O[31], R, R, R, R, R, PC, PC, R)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x=%s[a]local s=%s[a+2]%s[a]=x-s %s=%s+sbx end', D, O[32], R, R, R, R, PC, PC)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local cb,s,var=%s[a],%s[a+1],%s[a+2] local r={cb(s,var)} for i=1,c do %s[a+2+i]=r[i]end if %s[a+3]~=nil then %s[a+2]=%s[a+3]else %s=%s+1 end end', D, O[33], R, R, R, R, R, R, R, R, PC, PC)
-    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local n=(b==0)and(%s-a)or b if c==0 then local ne=%s[%s] local nk=(%s+%s*%s+%s)%%%s %s=%s+1 local nw=(ne-nk)%%%s if nw<0 then nw=nw+%s end local _,_,_,_,cbx=%s(nw) c=cbx end local o=(c-1)*50 local t=%s[a] for i=1,n do t[o+i]=%s[a+i]end end', D, O[34], R, TOP, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, R, R)
+    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local n=(b==0)and(%s-a)or b if c==0 then local prev_ne=(%s>1)and(%s[%s-1]or 0)or 0 local ne=%s[%s] local nk=(%s+%s*%s+%s+prev_ne*37)%%%s %s=%s+1 local nw=(ne-nk)%%%s if nw<0 then nw=nw+%s end local _,_,_,_,cbx=%s(nw) c=cbx end local o=(c-1)*50 local t=%s[a] for i=1,n do t[o+i]=%s[a+i]end end', D, O[34], R, TOP, PC, INS, PC, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, R, R)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx)%s(a)end', D, O[35], R, CL)
-    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local p=%s[bx]local uv={} for i=0,p.up-1 do local e=%s[%s] local k=(%s+%s*%s+%s)%%%s %s=%s+1 local w=(e-k)%%%s if w<0 then w=w+%s end local op,_,pb=%s(w) if op==%d then if not %s[pb]then %s[pb]={%s,pb}end uv[i]=%s[pb] else uv[i]=upvals[pb]end end %s[a]=%s(p,env,uv) end', D, O[36], R, PS, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, O[0], OUV, OUV, R, OUV, R, WR)
+    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local p=%s[bx]local uv={} for i=0,p.up-1 do local prev_e=(%s>1)and(%s[%s-1]or 0)or 0 local e=%s[%s] local nk=(%s+%s*%s+%s+prev_e*37)%%%s %s=%s+1 local w=(e-nk)%%%s if w<0 then w=w+%s end local op,_,pb=%s(w) op=((op-%s)*%s)%%256 if op==%d then if not %s[pb]then %s[pb]={%s,pb}end uv[i]=%s[pb] else uv[i]=upvals[pb]end end %s[a]=%s(p,env,uv) end', D, O[36], R, PS, PC, INS, PC, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, V.poa, V.pom, O[0], OUV, OUV, R, OUV, R, WR)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local n=(b==0)and(%s-pr.np)or(b-1) for i=1,n do %s[a+i-1]=%s[pr.np+i]end if b==0 then %s=a+n-1 end end', D, O[37], R, VLEN, R, VA, TOP)
 
     -- Shuffle dispatch order
@@ -504,6 +555,10 @@ function Generator.emit(encoded_root, encoder_instance, options)
     close = close:gsub("__AST",           function() return V.ast_v end)
     close = close:gsub("__GENV",          function() return V.genv end)
     close = close:gsub("__LOADER",        function() return V.loader end)
+    close = close:gsub("__POISON",        function() return V.poison end)
+    close = close:gsub("__PREVE",         function() return V.preve end)
+    close = close:gsub("__POM",           function() return V.pom end)
+    close = close:gsub("__POA",           function() return V.poa end)
     code_parts[#code_parts+1] = minify(close)
 
     -- === Format exactly matching authentic Luraph (e.g. legendary.lua) ===
@@ -539,6 +594,9 @@ function Generator.emit(encoded_root, encoder_instance, options)
     table.insert(markers_list, string.format("local _LPH_ENCKEY='%s'", enc_key))
     table.insert(markers_list, string.format("local _LPH_SIGNATURE='%s%s'", sig1, sig2))
     table.insert(markers_list, "local _LPH_LOAD=loadstring or load or function()end")
+    table.insert(markers_list, "local _LPH_EXECUTE=function(...)return ...end")
+    table.insert(markers_list, "local _LPH_DECODE=function(...)return ...end")
+    table.insert(markers_list, "local _LPH_VERIFIED=true")
     local inlined_markers = table.concat(markers_list, " ")
 
     -- Exactly 1 continuous line of code inside return(function(...) ... end)(...);
