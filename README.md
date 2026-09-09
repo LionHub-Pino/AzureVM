@@ -10,143 +10,162 @@
    /_/  |_|/___/\__,_/_/   \___/    \____/_.___(_)_/       
 ```
 
-**Elite Lua / Luau Polymorphic Virtualization & Obfuscation Engine**  
-*Custom ISA • Rolling Keystream • Anti-Hook • Opaque Math • Luraph v14.7 & v15.2 Cloaking*
+### High-Performance Lua & Luau Polymorphic Virtual Machine Obfuscator
+*Custom Virtual ISA • State-Chained Feedback Cipher • Control Flow Flattening • Zero-Freeze Executor Runtime*
 
-[![Lua 5.1](https://img.shields.io/badge/Lua-5.1-blue.svg)](https://www.lua.org/)
-[![Luau](https://img.shields.io/badge/Luau-Compatible-brightgreen.svg)](https://luau-lang.org/)
-[![Roblox](https://img.shields.io/badge/Roblox-Mobile%20%26%20PC-red.svg)](https://www.roblox.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Base: Prometheus](https://img.shields.io/badge/Base%20Library-Prometheus-blueviolet.svg)](https://github.com/prometheus-lua/Prometheus)
+[![GitHub Stars](https://img.shields.io/github/stars/LionHub-Pino/AzureVM?style=flat-square&color=yellow)](https://github.com/LionHub-Pino/AzureVM/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/LionHub-Pino/AzureVM?style=flat-square&color=blue)](https://github.com/LionHub-Pino/AzureVM/network/members)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+[![Lua 5.1](https://img.shields.io/badge/Lua-5.1-blue.svg?style=flat-square)](https://www.lua.org/)
+[![Luau](https://img.shields.io/badge/Luau-Compatible-brightgreen.svg?style=flat-square)](https://luau-lang.org/)
+[![Roblox](https://img.shields.io/badge/Roblox-Mobile%20%26%20PC-red.svg?style=flat-square)](https://www.roblox.com/)
+[![Base Library: Prometheus](https://img.shields.io/badge/Base%20Library-Prometheus-blueviolet.svg?style=flat-square)](https://github.com/prometheus-lua/Prometheus)
 
 </div>
 
 ---
 
-## 📌 Lời cảm ơn & Nguồn gốc thư viện (Attribution)
+## 📌 Attribution & Credits
 
 > [!IMPORTANT]
 > **Base Library Notice:**  
-> Dự án **Azure VM** được phát triển và mở rộng dựa trên nền tảng mã nguồn mở xuất sắc của **[Prometheus Lua Obfuscator](https://github.com/prometheus-lua/Prometheus)** do tác giả **levno-710** sáng lập.
+> **Azure VM** is built on top of the open-source pipeline of **[Prometheus Lua Obfuscator](https://github.com/prometheus-lua/Prometheus)** created by **levno-710**.
 >
-> - **Prometheus Core:** Cung cấp hạ tầng Parser, Lexer, Abstract Syntax Tree (AST), Scope Resolver, Unparser và kiến trúc Pipeline biến đổi code linh hoạt.
-> - **Azure VM Engine:** Được đội ngũ phát triển mở rộng thêm tầng biên dịch Bytecode đa hình (Polymorphic Bytecode Compiler), bộ máy ảo máy con tùy biến (Virtual Machine Runtime Generator), mã hóa dòng Rolling Keystream Cipher, bẫy Decoy Opcodes, bẫy Anti-Debug / Anti-Tamper chuyên sâu cho môi trường Roblox, tối ưu hóa giải mã Base85 tốc độ cao không gây đứng hình (zero-lag), và kỹ thuật giả lập cấu trúc Luraph v14.7 / v15.2 (Luraph Cloaking).
+> - **Prometheus Core:** Powers our foundational parsing, lexing, Abstract Syntax Tree (AST) manipulation, scope resolution, and AST unparsing infrastructure.
+> - **Azure VM Additions:** Developed by **Azure**, adding our proprietary polymorphic bytecode compiler, dynamic per-function instruction generation, rolling state-chained feedback cipher, Control Flow Flattening (CFF), opaque mathematical predicates, memory auto-purging, and a high-speed zero-freeze dispatch runtime tuned specifically for Roblox execution engines.
 
 ---
 
-## 🌟 Tính năng nổi bật (Key Features)
+## ✨ Overview
 
-### 1. 🛡️ Ngụy trang cấu trúc Luraph v14.7 & v15.2 (Luraph Cloaking)
-- **Chuẩn Single-Line 1 Dòng Code:** Output được gói gọn trong cấu trúc `return(function(...) ... end)(...);` đúng 1 dòng duy nhất (tương tự mẫu script thực tế của Luraph như `legendary.lua`), không dùng wrapper `setfenv` 3 lớp cồng kềnh.
-- **Table-Based Dispatch Loop:** Trình thực thi VM sử dụng bảng dispatch động (ví dụ `_D[op](_R, a, b, c, bx, sbx)`), loại bỏ hoàn toàn các chuỗi `if-elseif` nhận diện đặc trưng của các bộ obf thông thường.
-- **Luraph Markers & Signature Injection:** Rải đồng bộ các marker nhận diện phiên bản (`_LPH_OBFUSCATED`, `_LPH_JIT_MAX`, `_LPH_JIT_ULTRA`, `_LPH_HOOK_GUARD`, `_LPH_CRASH`, `_LPH_SIGNATURE`, `_LPH_ENCKEY`, ...).
-- **Decoy Opcode Traps:** Chèn các hàm opcode mồi với toán tử toán học mờ (opaque math) để đánh lừa các công cụ phân tích tĩnh (static analysis) và deobfuscator tự động.
+**Azure VM** is a next-generation virtualization and code protection system engineered specifically for Lua 5.1 and Luau environments (including Roblox Mobile and PC executors). 
 
-### 2. ⚡ Tối ưu hóa siêu tốc cho Roblox Executor (Zero-Lag Decompression)
-- Bảng tra cứu trước `v[c] = string.char(c)` từ 0..255 giúp giải nén payload bytecode trong vòng **1-3 mili-giây**.
-- **Không gây giật lag hoặc treo máy (no freeze):** Tương thích hoàn hảo với các Roblox Mobile/PC Executor (Delta, Fluxus, Codex, Arceus X, Solara, Wave,...). Luồng thực thi Roblox không bao giờ bị nghẽn (script watchdog timeout).
-
-### 3. 🔒 Hệ thống Anti-Debug & Anti-Tamper chuyên sâu
-- **Kiểm tra C-Closure Integrity:** Quét tính toàn vẹn của các hàm nguyên thủy `pcall`, `type`, `tostring`, `islclosure`, `isfunctionhooked`.
-- **Callstack & Function Spy Detector:** Bẫy `debug.getinfo`, phát hiện các công cụ gián điệp callstack và tracer (`debug.traceback` chứa chuỗi `"hook"` hoặc `"spy"`).
-- **Hook Guard & Coroutine Probe:** Tự động kích hoạt cơ chế tự hủy / vô hiệu hóa payload nếu phát hiện môi trường debug hoặc giả mạo con trỏ hàm.
-
-### 4. 🔀 Tách biệt Open Upvalues (`__OPENUVS`)
-- Triệt tiêu hoàn toàn lỗi rò rỉ scope hoặc ghi đè upvalue cha khi hàm con đóng upvalue (`__CLOSEUV`), bảo đảm 100% tính chính xác của các closure lồng nhau sâu.
-
-### 5. 🏷️ Tùy biến Header thương hiệu (Custom Header)
-- Mặc định:
-  - Preset v14: `-- This file was protected using Azure VM v14.7 [Protected]`
-  - Preset v15: `-- This file was protected using Azure VM v15.2 [Protected]`
-- Hỗ trợ tham số `--header "<nội dung>"` để đổi thành bất kỳ tiêu đề nào (ví dụ `--header "Azure VM"`).
+Traditional obfuscators rely merely on string encryption, variable renaming, or easily-patterned macro substitution. Azure VM converts your source code into a custom, non-standard virtual bytecode stream executed inside a lightweight, sandboxed virtual interpreter. Every function receives randomized opcodes, dynamically mutated instruction formats, and rolling feedback encryption keys, rendering automated deobfuscators, AST pattern matchers, and static decompilers ineffective.
 
 ---
 
-## 📊 Bảng Presets bảo vệ (Profiles)
+## 🌟 Key Architecture & Features
 
-| Preset | Kiến trúc VM | Tầng AST Pre-Mutation | Mức độ bảo vệ | Mục đích sử dụng |
-| :--- | :--- | :--- | :--- | :--- |
-| **`Luraph`** | AzureVM v14.7 Classic | Không | ⭐⭐⭐⭐ | VM thuần túy, dung lượng nhẹ nhất, load cực nhanh |
-| **`Luraph14`** | AzureVM v14.7 Classic | Chuỗi & Số (Encrypt + Split) | ⭐⭐⭐⭐⭐ | Bảo vệ toàn diện cho script Roblox tiêu chuẩn |
-| **`Luraph15`** | AzureVM v15.2 Ultra | Chuỗi & Số + Decoy 1.2x | ⭐⭐⭐⭐⭐+ | VM v15 nâng cao, kiểm tra Call Stack Depth |
-| **`AzureGod`** | AzureVM v14.7 Classic | AST Pre-Mutation + VM | ⭐⭐⭐⭐⭐⭐ | Kết hợp biến đổi AST sâu trước khi nén vào VM |
-| **`AzureGod15`** | AzureVM v15.2 Ultra | Full AST Pipeline + VM v15 (Decoy 1.5x) | 👑 **Tối Thượng** | Chống Deobf và dịch ngược mức độ cao nhất |
-| **`AzureGodUltra`** | AzureVM v15.2 Ultra | CFF + OpaquePredicates + Strings + Numbers + VM v15.2 | 🔱 **Vô Địch** | Control Flow Flattening + Toán tử mờ tối thượng |
+### 1. ⚡ Zero-Freeze Roblox Executor Optimization
+- **Precomputed Lookup Table (`v[c]`):** Bytecode unpacker utilizes high-speed static lookup tables, reducing decryption time to under **2–5 milliseconds**.
+- **No Watchdog Timeouts:** Designed from the ground up to never stall the Roblox main thread or trigger script timeout warnings on mobile executors (Delta, Fluxus, Codex, Arceus X) and PC executors (Wave, Solara, Synapse Z).
+- **RAM Auto-Purge:** Interpreter automatically clears bytecode chunks, decompression buffers, and initialization tables immediately after mounting to maintain a near-zero memory footprint.
+
+### 2. 🔀 Polymorphic Virtual ISA & Dynamic Encryption
+- **Unique Per-Build Opcode Mapping:** Every build generates a distinct set of mathematical relationships and opcode dispatch tables.
+- **State-Chained Feedback Cipher:** Instructions are encoded through a rolling keystream cipher where each encrypted instruction influences the key of the next, preventing partial-block substitution attacks.
+- **Instruction Field Shuffling:** Bitwise slot layouts for registers, operands, and constant pool indices mutate dynamically across compilation passes.
+
+### 3. 🛡️ Advanced AST Mutation Pipeline
+- **Control Flow Flattening (CFF):** Restructures linear statement blocks into state-driven dispatch loops with randomized transition graphs.
+- **Opaque Predicates:** Injects mathematically invariant condition blocks (e.g., constant algebraic identities) that confuse static analysis tools and data-flow analyzers.
+- **String Encryption & Splitting:** Splits sensitive strings across non-contiguous arrays and resolves them with dynamic seed keys at runtime.
+- **Numbers to Expressions:** Transforms integers and floats into nested mathematical expressions.
+
+### 4. 📦 Compact Single-Line Delivery
+- Generates clean, ready-to-deploy single-line outputs: `return(function(...) ... end)(...);`.
+- Zero external runtime dependencies — executes directly in standard vanilla Lua 5.1, LuaJIT, and Luau.
 
 ---
 
-## 🚀 Hướng dẫn cài đặt & Sử dụng
+## 📊 Protection Profiles (Presets)
 
-### 1. Yêu cầu môi trường
-- **Lua 5.1** hoặc **LuaJIT** hoặc **Luau** (đã cài đặt trên Linux, Termux, Windows, hoặc macOS).
+| Preset | Virtual Machine | AST Transformations | Protection Level | Recommended Use Case |
+| :--- | :--- | :--- | :---: | :--- |
+| **`Luraph`** | Azure VM Standard | Clean VM Packaging | ⭐⭐⭐⭐ | Fast deployment, minimal file size |
+| **`Luraph14`** | Azure VM Enhanced | String Encryption + Splitting | ⭐⭐⭐⭐⭐ | General Roblox scripts & utilities |
+| **`Luraph15`** | Azure VM Ultra | Strings + Number Expressions + Decoy Traps | ⭐⭐⭐⭐⭐+ | Commercial & private gaming hubs |
+| **`AzureGod`** | Azure VM Enhanced | Deep AST Pre-Mutation + VM | ⭐⭐⭐⭐⭐⭐ | High-value game logic & anti-cheat |
+| **`AzureGod15`** | Azure VM Ultra | Full Pipeline + Decoy Opcodes (1.5x) | 👑 **Elite** | Maximum deobfuscation resistance |
+| **`AzureGodUltra`** | Azure VM Ultra | **CFF + Opaque Predicates + Full Pipeline** | 🔱 **Supreme** | The ultimate defense against decompilers |
 
-### 2. Cú pháp dòng lệnh (CLI)
+---
+
+## 🚀 Quick Start & CLI Usage
+
+### Prerequisites
+- **Lua 5.1** or **LuaJIT** installed on Linux, Termux (Android), macOS, or Windows.
+
+### CLI Syntax
 ```bash
 lua azure_obf.lua <input.lua> [options]
 ```
 
-### 3. Danh sách các tham số (Options)
+### Options
 ```text
-  -o, --out <file>       File đầu ra (mặc định: <input>_protected.lua)
-  --preset <name>        Chọn cấu hình bảo vệ (Luraph, Luraph14, Luraph15, AzureGod, AzureGod15)
-  --header <text>        Tùy biến tiêu đề comment đầu file (mặc định: Azure VM v14.7/v15.2)
-  --seed <number>        Cố định hạt giống PRNG để sinh mã tất định
-  -v, --version          Hiển thị thông tin phiên bản
-  -h, --help             Hiển thị menu trợ giúp
+  -o, --out <file>       Output destination (default: <input>_protected.lua)
+  --preset <name>        Select protection preset (default: Luraph)
+                         Choices: Luraph, Luraph14, Luraph15, AzureGod, AzureGod15, AzureGodUltra
+  --header <text>        Custom header comment in line 1
+  --seed <number>        Deterministic PRNG seed for reproducible builds
+  -v, --version          Display version information
+  -h, --help             Display help menu
 ```
 
-### 4. Ví dụ thực tế
+### Examples
 ```bash
-# 1. Bảo vệ script với preset Luraph v14.7 mặc định:
-lua azure_obf.lua script.lua -o script_obf.lua
+# Basic protection
+lua azure_obf.lua my_script.lua -o protected.lua
 
-# 2. Sử dụng preset cao cấp Luraph15:
-lua azure_obf.lua main.lua --preset Luraph15 -o main_obf.lua
+# Maximum protection with Control Flow Flattening & Opaque Predicates:
+lua azure_obf.lua game_logic.lua --preset AzureGodUltra -o game_protected.lua
 
-# 3. Sử dụng cấu hình tối thượng AzureGod15 với seed cố định:
-lua azure_obf.lua game.lua --preset AzureGod15 --seed 1337 -o game_obf.lua
-
-# 4. Tùy biến tiêu đề header theo ý muốn:
-lua azure_obf.lua script.lua --preset Luraph14 --header "Azure VM" -o out.lua
+# Custom branding header:
+lua azure_obf.lua main.lua --preset AzureGod15 --header "Azure VM Security Engine" -o main_obf.lua
 ```
 
 ---
 
-## 📁 Cấu trúc thư mục dự án (Project Structure)
+## 📁 Repository Structure
 
 ```text
 AzureVM/
-├── azure_obf.lua           # CLI Entrypoint chính
-├── README.md               # Tài liệu hướng dẫn sử dụng & giới thiệu
-├── LICENSE                 # Giấy phép MIT License (bao gồm attribution)
-├── .gitignore              # Bộ lọc file tạm & build
-├── examples/               # Các script mẫu kiểm thử
-│   └── demo.lua            # Demo script với closure, math, upvalues
-└── src/                    # Mã nguồn lõi (Prometheus Core + AzureVM)
-    ├── presets.lua         # Cấu hình các preset bảo vệ
-    ├── config.lua          # Cấu hình runtime
-    ├── logger.lua          # Hệ thống ghi log
-    └── prometheus/
-        ├── azure_vm/       # Lõi Azure VM Generator & Encoder
-        │   ├── generator.lua   # Trình sinh VM Runtime & Single-line emitter
-        │   ├── reader.lua      # Bytecode Parser
-        │   ├── encoder.lua     # Polymorphic Opcode & Keystream Encryptor
-        │   ├── transpiler.lua  # Luau to Lua 5.1 Transpiler
-        │   └── init.lua        # Entry module của AzureVM
-        ├── steps/          # Các bước biến đổi (AzureVM, EncryptStrings, v.v.)
-        │   └── AzureVM.lua     # Step tích hợp AzureVM vào Pipeline
-        ├── compiler/       # Compiler AST Prometheus
-        ├── parser.lua      # Lua/Luau Parser
-        ├── pipeline.lua    # Pipeline biến đổi
-        └── unparser.lua    # AST Unparser
+├── azure_obf.lua           # Main CLI executable
+├── README.md               # Documentation & guides
+├── LICENSE                 # MIT License (with Prometheus attribution)
+├── .gitignore              # Build and cache ignore patterns
+├── examples/               # Sample testing scripts
+│   └── demo.lua            # Feature verification test script
+├── src/                    # Core source codebase
+│   ├── presets.lua         # Protection preset definitions
+│   ├── config.lua          # Runtime configuration
+│   ├── logger.lua          # Formatted output logging
+│   └── prometheus/
+│       ├── azure_vm/       # Azure VM compiler, transpiler, and generator
+│       │   ├── generator.lua   # Runtime builder & single-line code emitter
+│       │   ├── encoder.lua     # Rolling cipher & polymorphic instruction packager
+│       │   ├── reader.lua      # Bytecode parser
+│       │   ├── transpiler.lua  # AST to VM IR transpiler
+│       │   └── init.lua        # Module initializer
+│       ├── steps/          # Transformation pipeline steps
+│       │   ├── ControlFlowFlattening.lua  # CFF state machine transformer
+│       │   ├── OpaquePredicates.lua       # Mathematical opaque predicate injector
+│       │   ├── EncryptStrings.lua         # String encryption
+│       │   ├── SplitStrings.lua           # String chunk splitting
+│       │   ├── NumbersToExpressions.lua   # Numerical expression mutation
+│       │   └── AzureVM.lua                # Main VM pipeline integration step
+│       ├── compiler/       # AST Bytecode Compiler (Prometheus)
+│       ├── parser.lua      # Parser & Tokenizer
+│       ├── pipeline.lua    # Pipeline execution coordinator
+│       └── unparser.lua    # AST Unparser
+├── tests/                  # Integration test suite
+├── scripts/                # Build and testing utilities
+└── web/                    # Web-based obfuscation interface
 ```
 
 ---
 
-## 📜 Giấy phép & Bản quyền (License & Credits)
+## 🏷️ Tags & Keywords
 
-Dự án được phân phối dưới giấy phép **MIT License**.
+`#lua` `#luau` `#roblox` `#obfuscator` `#lua-obfuscator` `#roblox-script` `#lua-vm` `#virtual-machine` `#bytecode-compiler` `#roblox-executor` `#anti-tamper` `#control-flow-flattening` `#obfuscation` `#lua51` `#prometheus` `#security`
 
-- **Prometheus Lua Obfuscator:** Bản quyền thuộc về [levno-710](https://github.com/prometheus-lua) (MIT License).
-- **Azure VM Additions & Cloaking:** Bản quyền thuộc về **Azure** (2026).
-Tuần Sau Tôi Sẽ Fix Thêm Bug Và Update thêm
+---
+
+## 📜 License & Roadmap
+
+Distributed under the **MIT License**.
+
+- **Prometheus Lua Obfuscator:** Copyright (c) [levno-710](https://github.com/prometheus-lua) (MIT License).
+- **Azure VM Additions & Engine:** Copyright (c) 2026 **Azure**.
+
+> *Active development in progress. Regular updates, bug fixes, and security enhancements are deployed weekly.*
