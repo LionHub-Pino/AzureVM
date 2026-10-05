@@ -312,11 +312,13 @@ function Encoder:encode_prototype(proto)
             c = math.floor(inst.bx / 512) % 512
         end
 
+        -- The prior encrypted word selects this instruction's field layout.
+        local instruction_layout = (layout_mode + prev_enc % 3) % 3
         local raw
-        if layout_mode == 0 then
+        if instruction_layout == 0 then
             -- Standard: OP(8) | A(8) | B(9) | C(9)
             raw = rand_op + a * 256 + b * 65536 + c * 33554432
-        elseif layout_mode == 1 then
+        elseif instruction_layout == 1 then
             -- Permuted 1: A(8) | OP(8) | C(9) | B(9)
             raw = a + rand_op * 256 + c * 65536 + b * 33554432
         else

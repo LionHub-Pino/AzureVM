@@ -55,7 +55,7 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 ### 2. 🔀 Polymorphic Virtual ISA & Dynamic Encryption
 - **Seeded opcode mapping:** The build seed controls a shuffled opcode map. Fixed seeds produce reproducible output.
 - **Rolling instruction encoding:** Each encoded instruction contributes to the key used for the next instruction. The decoder and key material are included in the generated file.
-- **Per-prototype field layouts:** Nested functions can use different arrangements of instruction fields.
+- **Chained field layouts:** Nested functions have different base layouts, and each instruction's field arrangement also depends on the previous encoded instruction.
 
 ### 3. 🛡️ Advanced AST Mutation Pipeline
 - **Control Flow Flattening (CFF):** Available in the `AzureGodUltra` preset for eligible statement blocks.
@@ -91,6 +91,8 @@ The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine
 - Run the focused checks with `lua5.1 tests/payload-integrity.lua && lua5.1 tests/seed-behavior.lua`.
 - Run `lua5.1 tests/false-constants.lua` and `bash tests/verify-vm.sh Luraph` to verify VM output against Lua 5.1 behavior. The VM now preserves `false` and `nil` RK operands rather than losing them to the Lua `and/or` idiom.
 - Each nested prototype now receives an independent instruction-field layout (three supported layouts), rather than sharing one layout across the whole output. Run `lua5.1 tests/per-prototype-layout.lua` for a ten-seed mixed-layout check. This raises static analysis effort but cannot prevent inspection of plaintext values during execution.
+- Each instruction now selects one of those layouts using the preceding encoded word. Run `lua5.1 tests/chained-layout.lua` for an instruction-level decoding check across ten seeds. The VM and decoder still ship with the output, so this is not a guarantee against devirtualization.
+- Chained layout decoding adds runtime work. In one local 10,000-iteration Lua 5.1 loop sample, median wall time rose from 0.1002 s to 0.1136 s (9 runs each). This is not a general performance benchmark; measure your own workload before deploying.
 - The runtime releases the transient decoded payload buffer after materializing prototypes. This reduces retained plaintext copies; it does not make live VM state undumpable.
 
 These changes have **not** been benchmarked against Luraph and do not establish stronger protection than Luraph.

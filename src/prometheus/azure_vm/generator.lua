@@ -147,7 +147,7 @@ for i=0,(pr.np or 0)-1 do __REG[i]=__VARGS[i+1] end
 __STOP=(pr.np or 0)-1
 local function __CLOSEUV(lim) for r,x in pairs(__OPENUVS) do if r>=lim then x[1]={x[1][x[2]]} x[2]=1 __OPENUVS[r]=nil end end end
 local __KSEED,__KLM,__KLA,__KMOD=__VM_SEED,__VM_LMUL,__VM_LADD,__VM_LMOD
-local function __PARSE(w)
+local function __PARSE(w,prev_e)
 __PARSE_BODY
 end
 local __DISP={}
@@ -167,7 +167,7 @@ if __POISON>0 and (__CTR>25 or __IPC>15) then k=(k+__POISON*7919)%__KMOD end
 __IPC=__IPC+1
 local w=(e-k)%__KMOD
 if w<0 then w=w+__KMOD end
-local op,a,b,c,bx,sbx=__PARSE(w)
+local op,a,b,c,bx,sbx=__PARSE(w,prev_e)
 op=((op-__POA)*__POM)%256
 if w == 13371337 then if _LPH_CRASH then _LPH_CRASH() end end
 if (__CTR > 8000) and (((__CTR * (__CTR + 1)) % 2 ~= 0) or (((__IPC * (__IPC + 1)) % 2) ~= 0)) then __IPC = 0 end
@@ -232,7 +232,7 @@ if __POISON>0 and (__CTR>25 or __IPC>15) then k=(k+__POISON*7919)%__KMOD end
 __IPC=__IPC+1
 local w=(e-k)%__KMOD
 if w<0 then w=w+__KMOD end
-local op,a,b,c,bx,sbx=__PARSE(w)
+local op,a,b,c,bx,sbx=__PARSE(w,prev_e)
 op=((op-__POA)*__POM)%256
 if w == 13371337 then if _LPH_CRASH then _LPH_CRASH() end end
 if (__CTR > 8000) and (((__CTR * (__CTR + 1)) % 2 ~= 0) or (((__IPC * (__IPC + 1)) % 2) ~= 0)) then __IPC = 0 end
@@ -423,16 +423,17 @@ function Generator.emit(encoded_root, encoder_instance, options)
     -- Decode the layout selected for this prototype.
     local parse_body = string.format([[
 local op,a,b,c
-if %s==0 then
+local mode=(%s+prev_e%%3)%%3
+if mode==0 then
 op=w%%256 a=%s(w/256)%%256 b=%s(w/65536)%%512 c=%s(w/33554432)%%512
-elseif %s==1 then
+elseif mode==1 then
 a=w%%256 op=%s(w/256)%%256 c=%s(w/65536)%%512 b=%s(w/33554432)%%512
 else
 op=w%%256 b=%s(w/256)%%512 c=%s(w/131072)%%512 a=%s(w/67108864)%%256
 end
 local bx=b+c*512 return op,a,b,c,bx,bx-131071]],
         V.layout, V.floor, V.floor, V.floor,
-        V.layout, V.floor, V.floor, V.floor,
+        V.floor, V.floor, V.floor,
         V.floor, V.floor, V.floor)
 
     -- === Build VM_ENGINE with polymorphic names ===
@@ -534,9 +535,9 @@ local bx=b+c*512 return op,a,b,c,bx,bx-131071]],
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local s=%s[a+2]local x=%s[a]+s %s[a]=x local l=%s[a+1] if(s>0 and x<=l)or(s<=0 and x>=l)then %s=%s+sbx %s[a+3]=x end end', D, O[31], R, R, R, R, R, PC, PC, R)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local x=%s[a]local s=%s[a+2]%s[a]=x-s %s=%s+sbx end', D, O[32], R, R, R, R, PC, PC)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local cb,s,var=%s[a],%s[a+1],%s[a+2] local r={cb(s,var)} for i=1,c do %s[a+2+i]=r[i]end if %s[a+3]~=nil then %s[a+2]=%s[a+3]else %s=%s+1 end end', D, O[33], R, R, R, R, R, R, R, R, PC, PC)
-    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local n=(b==0)and(%s-a)or b if c==0 then local prev_ne=(%s>1)and(%s[%s-1]or 0)or 0 local ne=%s[%s] local nk=(%s+%s*%s+%s+prev_ne*37)%%%s %s=%s+1 local nw=(ne-nk)%%%s if nw<0 then nw=nw+%s end local _,_,_,_,cbx=%s(nw) c=cbx end local o=(c-1)*50 local t=%s[a] for i=1,n do t[o+i]=%s[a+i]end end', D, O[34], R, TOP, PC, INS, PC, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, R, R)
+    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local n=(b==0)and(%s-a)or b if c==0 then local prev_ne=(%s>1)and(%s[%s-1]or 0)or 0 local ne=%s[%s] local nk=(%s+%s*%s+%s+prev_ne*37)%%%s %s=%s+1 local nw=(ne-nk)%%%s if nw<0 then nw=nw+%s end local _,_,_,_,cbx=%s(nw,prev_ne) c=cbx end local o=(c-1)*50 local t=%s[a] for i=1,n do t[o+i]=%s[a+i]end end', D, O[34], R, TOP, PC, INS, PC, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, R, R)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx)%s(a)end', D, O[35], R, CL)
-    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local p=%s[bx]local uv={} for i=0,p.up-1 do local prev_e=(%s>1)and(%s[%s-1]or 0)or 0 local e=%s[%s] local nk=(%s+%s*%s+%s+prev_e*37)%%%s %s=%s+1 local w=(e-nk)%%%s if w<0 then w=w+%s end local op,_,pb=%s(w) op=((op-%s)*%s)%%256 if op==%d then if not %s[pb]then %s[pb]={%s,pb}end uv[i]=%s[pb] else uv[i]=upvals[pb]end end %s[a]=%s(p,env,uv) end', D, O[36], R, PS, PC, INS, PC, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, V.poa, V.pom, O[0], OUV, OUV, R, OUV, R, WR)
+    d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local p=%s[bx]local uv={} for i=0,p.up-1 do local prev_e=(%s>1)and(%s[%s-1]or 0)or 0 local e=%s[%s] local nk=(%s+%s*%s+%s+prev_e*37)%%%s %s=%s+1 local w=(e-nk)%%%s if w<0 then w=w+%s end local op,_,pb=%s(w,prev_e) op=((op-%s)*%s)%%256 if op==%d then if not %s[pb]then %s[pb]={%s,pb}end uv[i]=%s[pb] else uv[i]=upvals[pb]end end %s[a]=%s(p,env,uv) end', D, O[36], R, PS, PC, INS, PC, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, V.poa, V.pom, O[0], OUV, OUV, R, OUV, R, WR)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local n=(b==0)and(%s-pr.np)or(b-1) for i=1,n do %s[a+i-1]=%s[pr.np+i]end if b==0 then %s=a+n-1 end end', D, O[37], R, VLEN, R, VA, TOP)
 
     -- Lua's `and/or` idiom loses false and nil constants in RK operands.
