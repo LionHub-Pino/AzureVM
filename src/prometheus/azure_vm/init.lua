@@ -14,6 +14,7 @@ local Reader     = require("prometheus.azure_vm.reader")
 local Encoder    = require("prometheus.azure_vm.encoder")
 local Generator  = require("prometheus.azure_vm.generator")
 local Transpiler = require("prometheus.azure_vm.transpiler")
+local Seed       = require("prometheus.azure_vm.seed")
 
 local AzureVM = {}
 
@@ -34,7 +35,7 @@ function AzureVM.compile(source_code, options)
     local root_proto = Reader.parse(raw_bytecode)
 
     -- 4. Encode with polymorphic opcodes and rolling keystream
-    local seed = options.Seed or os.time()
+    local seed = options.Seed or Seed.random()
     local encoder = Encoder.new(seed)
     local encoded_root = encoder:encode_prototype(root_proto)
 

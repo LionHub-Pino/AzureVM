@@ -111,6 +111,12 @@ for i=0,np2-1 do local child; child,pos=__READP(bin,pos) proto.ps[i]=child end
 return proto,pos
 end
 local __BIN=__DECODE(c,__PAD,__BKEY)
+local __A,__B=1,0
+for __I=1,#__BIN do
+__A=(__A+j(__BIN,__I))%65521
+__B=(__B+__A)%65521
+end
+if __B*65536+__A~=__CHECKSUM then error("AzureVM payload integrity check failed",0) end
 local __AST=(__READP(__BIN,1))
 __AST.rt=true
 ]=]
@@ -353,7 +359,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
     local layout  = encoder_instance.layout_mode or 0
     local lph_ver = options.LuraphVersion or 15
 
-    local blob, pad = encoder_instance:serialize_to_blob(encoded_root)
+    local blob, pad, checksum = encoder_instance:serialize_to_blob(encoded_root)
 
     local O = {}
     local used_ops = {}
@@ -403,6 +409,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
     decoder = decoder:gsub("__PAYLOAD", function() return payload_s end)
     decoder = decoder:gsub("__PAD",     function() return pad_s end)
     decoder = decoder:gsub("__BKEY",    function() return bkey_s end)
+    decoder = decoder:gsub("__CHECKSUM", function() return tostring(checksum) end)
     decoder = decoder:gsub("__BIN",     function() return V.bin_v end)
     decoder = decoder:gsub("__AST",     function() return V.ast_v end)
     code_parts[#code_parts+1] = minify(decoder)

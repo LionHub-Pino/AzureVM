@@ -83,6 +83,14 @@ Traditional obfuscators rely merely on string encryption, variable renaming, or 
 
 ## 🚀 Quick Start & CLI Usage
 
+### Verified hardening
+
+- Encoded payloads now carry a decoded-data checksum and fail before VM execution if modified. This detects simple corruption or edits; it is **not** a cryptographic signature and can be bypassed by an analyst who controls the output file.
+- Default builds use OS randomness (`/dev/urandom` where available) instead of a seconds-resolution timestamp. `--seed` now controls the VM build as documented, so fixed-seed builds are reproducible. On platforms without `/dev/urandom`, the fallback is not cryptographically unpredictable.
+- Run the focused checks with `lua5.1 tests/payload-integrity.lua && lua5.1 tests/seed-behavior.lua`.
+
+These changes have **not** been benchmarked against Luraph and do not establish stronger protection than Luraph.
+
 ### Prerequisites
 - **Lua 5.1** or **LuaJIT** installed on Linux, Termux (Android), macOS, or Windows.
 

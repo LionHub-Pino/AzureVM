@@ -64,7 +64,7 @@ end
 local input_file = nil
 local output_file = nil
 local preset = "Luraph"
-local seed = os.time()
+local seed = require("prometheus.azure_vm.seed").random()
 local header_text = nil
 
 local i = 1

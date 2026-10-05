@@ -173,6 +173,15 @@ local function azure_encrypt(data, key)
     return table.concat(out)
 end
 
+local function payload_checksum(data)
+    local a, b = 1, 0
+    for i = 1, #data do
+        a = (a + data:byte(i)) % 65521
+        b = (b + a) % 65521
+    end
+    return b * 65536 + a
+end
+
 local function base85_z_encode(data)
     local result = {}
     local pad = (4 - (#data % 4)) % 4
@@ -198,7 +207,7 @@ end
 -- Encoder constructor
 -- =====================================================================
 function Encoder.new(seed)
-    seed = seed or os.time()
+    seed = seed or require("prometheus.azure_vm.seed").random()
     math.randomseed(seed)
     local self = setmetatable({}, { __index = Encoder })
     self.seed = seed
@@ -334,7 +343,7 @@ function Encoder:serialize_to_blob(encoded_ast)
     local binary    = serialize_binary(encoded_ast)
     local encrypted = azure_encrypt(binary, self.blob_key)
     local blob, pad = base85_z_encode(encrypted)
-    return blob, pad
+    return blob, pad, payload_checksum(binary)
 end
 
 function Encoder:runtime_decoder_src(blob, pad)

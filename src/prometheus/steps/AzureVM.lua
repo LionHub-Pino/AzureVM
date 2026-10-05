@@ -16,6 +16,7 @@ local Step = require("prometheus.step")
 local AzureVM = require("prometheus.azure_vm")
 local Parser = require("prometheus.parser")
 local logger = require("logger")
+local Seed = require("prometheus.azure_vm.seed")
 
 local AzureVMStep = Step:extend()
 AzureVMStep.Description = "Compiles code into a custom polymorphic bytecode virtual machine with rolling encryption, runtime integrity checks, and Luraph v14.7/v15.2 cloaking."
@@ -71,7 +72,9 @@ function AzureVMStep:apply(ast, pipeline)
     local unparser = pipeline.unparser
     local raw_source = unparser:unparse(ast)
 
-    local seed = (self.Seed and self.Seed > 0) and self.Seed or os.time()
+    local seed = (self.Seed and self.Seed > 0) and self.Seed
+        or (pipeline.seed and pipeline.seed > 0) and pipeline.seed
+        or Seed.random()
 
     local lph_ver_str = (self.LuraphVersion == 14) and "v14.7 Classic" or "v15.2 Ultra"
     logger:info(string.format("AzureVM [%s] format=%d: compiling with seed=%d, decoy_density=%.1f, opaque_predicates=%s",
