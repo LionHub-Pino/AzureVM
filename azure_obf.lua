@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 --[[
-    AzureObf - Elite Lua/Luau Virtualization & Obfuscation Engine
-    Architecture inspired by Prometheus & Luraph (Luraph-grade & beyond)
+    AzureObf - Lua 5.1 VM-based obfuscator
+    Built on Prometheus; preset names are AzureVM compatibility labels.
     Developed for Chủ Nhân Azure.
 ]]
 
@@ -24,8 +24,8 @@ local BANNER = [[
     / ___ | / /_/ /_/ / /  /  __/   / /_/ / /_/ / / __/    
    /_/  |_|/___/\__,_/_/   \___/    \____/_.___(_)_/       
                                                            
-   Elite Lua/Luau Virtualization Engine | Luraph-Grade & Beyond
-   Custom ISA - Rolling Keystream - Anti-Hook - Opaque Math
+   Lua 5.1 VM-based obfuscator
+   Custom opcode mapping - rolling encoding - optional AST transforms
 ================================================================================
 ]]
 
@@ -36,13 +36,13 @@ local function print_help()
     print("Options:")
     print("  -o, --out <file>       Output destination (default: <input>_protected.lua)")
     print("  --preset <name>        Protection profile:")
-    print("                           Luraph     : Luraph v14.7 Standalone VM (Default)")
-    print("                           Luraph14   : Luraph v14.7 Full Pipeline (Pre-VM + VM + Post-VM)")
-    print("                           Luraph15   : Luraph v15.2 Ultra Full Pipeline")
-    print("                           AzureGod   : AST Pre-Mutation + AzureVM v14.7")
-    print("                           AzureGod15 : AST Pre-Mutation + Full Pipeline + AzureVM v15.2")
-    print("                           AzureGodUltra : CFF + AST Pre-Mutation + AzureVM v15.2 Ultra (Ultimate)")
-    print("  --header <text>        Custom comment header (default: Azure VM v14.7/v15.2)")
+    print("                           Luraph     : AzureVM baseline (default; not Luraph)")
+    print("                           Luraph14   : AzureVM with string and number transforms")
+    print("                           Luraph15   : Same transforms, more decoy handlers")
+    print("                           AzureGod   : String and number transforms, 1.5x decoys")
+    print("                           AzureGod15 : Same transforms, template mode 15")
+    print("                           AzureGodUltra : Adds CFF and opaque predicates")
+    print("  --header <text>        Custom comment header (default: AzureVM template mode)")
     print("  --seed <number>        Fixed PRNG seed for deterministic compilation")
     print("  -v, --version          Show version info")
     print("  -h, --help             Show this help menu")
@@ -119,7 +119,7 @@ print(BANNER)
 print(string.format("[*] Target Script : %s (%d bytes)", input_file, #source_code))
 print(string.format("[*] Preset        : %s", preset))
 local lph_ver = (preset:lower():find("15") or preset:lower():find("ultra")) and 15 or 14
-print(string.format("[*] Cloaking Mode : Luraph v%s", lph_ver == 15 and "15.2 Ultra" or "14.7 Classic"))
+print(string.format("[*] Template Mode : AzureVM %d", lph_ver))
 print(string.format("[*] PRNG Seed     : %d", seed))
 print("")
 
@@ -165,4 +165,4 @@ f_out:close()
 print("")
 print(string.format("[+] Obfuscation successfully completed in %.2f seconds!", elapsed))
 print(string.format("[+] Output File: %s (%d bytes)", output_file, #final_code))
-print("[+] Protection verified: Luraph-grade polymorphic VM + rolling keystream active.")
+print("[+] AzureVM output generated. Run tests before deploying to your target runtime.")

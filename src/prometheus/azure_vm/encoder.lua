@@ -1,7 +1,7 @@
 --[[
-    AzureVM Encoder v14.7 - Luraph-grade Binary Prototype Serializer
+    AzureVM binary prototype serializer
     - Encodes Lua 5.1 prototype tree to compact BINARY (not Lua table text)
-    - Reversible Multi-Key Rolling Cipher (100% verified) -> Ascii85 + z-group compression
+    - Reversible rolling byte encoding followed by Ascii85-like transport encoding
     - Dynamic Opcode Scrambling & Polymorphic Field Layout
     - Fixes: c.type (not c.t) to match reader.lua output
     - Supports full 38 Lua 5.1 opcodes with iABx / iAsBx packing
@@ -147,7 +147,7 @@ local function serialize_binary(node)
 end
 
 -- =====================================================================
--- Luraph v14.7 Multi-Key Rolling Cipher (100% Mathematically Reversible)
+-- AzureVM reversible rolling byte encoding; not cryptographic encryption.
 -- =====================================================================
 local function azure_encrypt(data, key)
     local out = {}

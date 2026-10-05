@@ -2,7 +2,8 @@
     Prometheus Step: AzureVM
     Bytecode Virtualization Compiler
     Transforms source code into a custom polymorphic bytecode virtual machine.
-    Supports Luraph v14.7 Classic and v15.2 Ultra cloaking modes.
+    Supports AzureVM template modes 14 and 15. Historical preset names are
+    compatibility labels, not claims of Luraph equivalence.
 
     Runtime features:
     - Rolling payload encryption
@@ -19,7 +20,7 @@ local logger = require("logger")
 local Seed = require("prometheus.azure_vm.seed")
 
 local AzureVMStep = Step:extend()
-AzureVMStep.Description = "Compiles code into a custom polymorphic bytecode virtual machine with rolling encryption, runtime integrity checks, and Luraph v14.7/v15.2 cloaking."
+AzureVMStep.Description = "Compiles code into an AzureVM Lua 5.1-based virtual machine with rolling instruction encoding and payload corruption checks."
 AzureVMStep.Name = "AzureVM"
 
 AzureVMStep.SettingsDescriptor = {
@@ -36,7 +37,7 @@ AzureVMStep.SettingsDescriptor = {
     LuraphVersion = {
         type = "number",
         default = 15,
-        description = "Luraph cloaking version: 14 for v14.7 Classic, 15 for v15.2 Ultra"
+        description = "AzureVM output-template mode (14 or 15); not a Luraph engine version"
     },
     DecoyDensity = {
         type = "number",
@@ -76,9 +77,8 @@ function AzureVMStep:apply(ast, pipeline)
         or (pipeline.seed and pipeline.seed > 0) and pipeline.seed
         or Seed.random()
 
-    local lph_ver_str = (self.LuraphVersion == 14) and "v14.7 Classic" or "v15.2 Ultra"
-    logger:info(string.format("AzureVM [%s] format=%d: compiling with seed=%d, decoy_density=%.1f, opaque_predicates=%s",
-        lph_ver_str, self.FormatVersion, seed, self.DecoyDensity, tostring(self.OpaquePredicates)))
+    logger:info(string.format("AzureVM [template %d] format=%d: compiling with seed=%d, decoy_density=%.1f, opaque_predicates=%s",
+        self.LuraphVersion, self.FormatVersion, seed, self.DecoyDensity, tostring(self.OpaquePredicates)))
 
     local vm_source = AzureVM.compile(raw_source, {
         Seed = seed,

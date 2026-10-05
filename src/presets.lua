@@ -3,7 +3,7 @@
 -- presets.lua
 --
 -- Predefined obfuscation presets for Prometheus + AzureVM
--- High-fidelity Luraph v14.7 Classic & v15.2 Ultra Cloaking
+-- AzureVM presets. Historical Luraph-named keys are compatibility labels.
 
 return {
 	-- Minifies your code. Does not obfuscate it. No performance loss.
@@ -105,9 +105,9 @@ return {
 	},
 
 	-- =====================================================================
-	-- Luraph: Standalone Luraph v14.7 Classic Virtual Machine (Default)
+    -- Luraph: AzureVM baseline template mode 14 (default)
 	-- Fingerprint: LPH_JIT_MAX, debug.getinfo(1)
-	-- Pure polymorphic bytecode dispatch + rolling keystream
+    -- Opcode mapping and rolling instruction encoding
 	-- =====================================================================
 	["Luraph"] = {
 		LuaVersion = "Lua51",
@@ -121,9 +121,9 @@ return {
 	},
 
 	-- =====================================================================
-	-- Luraph14: Full Pipeline Luraph v14.7 Classic
+    -- Luraph14: AzureVM template mode 14 with AST pre-transforms
 	-- AST Pre-Mutation: SplitStrings + EncryptStrings + NumbersToExpressions
-	-- Virtualization: AzureVM v14.7 Classic polymorphic VM
+    -- Virtualization: AzureVM template mode 14
 	-- =====================================================================
 	["Luraph14"] = {
 		LuaVersion = "Lua51",
@@ -140,9 +140,9 @@ return {
 	},
 
 	-- =====================================================================
-	-- Luraph15: Full Pipeline Luraph v15.2 Ultra
+    -- Luraph15: AzureVM template mode 15 with AST pre-transforms
 	-- AST Pre-Mutation: SplitStrings + EncryptStrings + NumbersToExpressions
-	-- Virtualization: AzureVM v15.2 Ultra polymorphic VM
+    -- Virtualization: AzureVM template mode 15
 	-- Fingerprint: LPH_JIT_ULTRA + pcall(debug.getinfo, 2, "f") + getupvalue checks
 	-- =====================================================================
 	["Luraph15"] = {
@@ -160,8 +160,7 @@ return {
 	},
 
 	-- =====================================================================
-	-- AzureGod: Maximum Protection with Luraph v14.7 Cloaking
-	-- Heavy AST Pre-Mutation + Dense Decoy Handlers + AzureVM v14.7
+    -- AzureGod: AST pre-transforms + 1.5x decoy density + template mode 14
 	-- =====================================================================
 	["AzureGod"] = {
 		LuaVersion = "Lua51",
@@ -178,8 +177,7 @@ return {
 	},
 
 	-- =====================================================================
-	-- AzureGod15: Maximum Protection with Luraph v15.2 Ultra Cloaking
-	-- Heavy AST Pre-Mutation + Dense Decoy Handlers + AzureVM v15.2 Ultra
+    -- AzureGod15: AST pre-transforms + 1.5x decoy density + template mode 15
 	-- =====================================================================
 	["AzureGod15"] = {
 		LuaVersion = "Lua51",
@@ -196,8 +194,8 @@ return {
 	},
 
 	-- =====================================================================
-	-- AzureGodUltra: Ultimate Protection with CFF + Luraph v15.2 Ultra Cloaking
-	-- Control Flow Flattening + SplitStrings + EncryptStrings + NumbersToExpressions + AzureVM v15.2 Ultra
+    -- AzureGodUltra: CFF and opaque predicates in addition to AST pre-transforms
+    -- and AzureVM template mode 15. This is not a measured security ranking.
 	-- =====================================================================
 	["AzureGodUltra"] = {
 		LuaVersion = "Lua51",

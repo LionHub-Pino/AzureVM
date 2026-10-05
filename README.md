@@ -10,15 +10,14 @@
    /_/  |_|/___/\__,_/_/   \___/    \____/_.___(_)_/       
 ```
 
-### High-Performance Lua & Luau Polymorphic Virtual Machine Obfuscator
-*Custom Virtual ISA • State-Chained Feedback Cipher • Control Flow Flattening • Zero-Freeze Executor Runtime*
+### Lua 5.1 VM-based obfuscator
+*Custom opcode mapping • rolling instruction encoding • optional AST transforms*
 
 [![GitHub Stars](https://img.shields.io/github/stars/LionHub-Pino/AzureVM?style=flat-square&color=yellow)](https://github.com/LionHub-Pino/AzureVM/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/LionHub-Pino/AzureVM?style=flat-square&color=blue)](https://github.com/LionHub-Pino/AzureVM/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 [![Lua 5.1](https://img.shields.io/badge/Lua-5.1-blue.svg?style=flat-square)](https://www.lua.org/)
-[![Luau](https://img.shields.io/badge/Luau-Compatible-brightgreen.svg?style=flat-square)](https://luau-lang.org/)
-[![Roblox](https://img.shields.io/badge/Roblox-Mobile%20%26%20PC-red.svg?style=flat-square)](https://www.roblox.com/)
+[![Luau](https://img.shields.io/badge/Luau-Partial%20transpilation-yellow.svg?style=flat-square)](https://luau-lang.org/)
 [![Base Library: Prometheus](https://img.shields.io/badge/Base%20Library-Prometheus-blueviolet.svg?style=flat-square)](https://github.com/prometheus-lua/Prometheus)
 
 </div>
@@ -32,52 +31,54 @@
 > **Azure VM** is built on top of the open-source pipeline of **[Prometheus Lua Obfuscator](https://github.com/prometheus-lua/Prometheus)** created by **levno-710**.
 >
 > - **Prometheus Core:** Powers our foundational parsing, lexing, Abstract Syntax Tree (AST) manipulation, scope resolution, and AST unparsing infrastructure.
-> - **Azure VM Additions:** Developed by **Azure**, adding our proprietary polymorphic bytecode compiler, dynamic per-function instruction generation, rolling state-chained feedback cipher, Control Flow Flattening (CFF), opaque mathematical predicates, memory auto-purging, and a high-speed zero-freeze dispatch runtime tuned specifically for Roblox execution engines.
+> - **Azure VM Additions:** Developed by **Azure**, adding a Lua 5.1 bytecode reader, custom instruction encoder and VM runtime, per-prototype field layouts, and optional AST transformation steps.
 
 ---
 
 ## ✨ Overview
 
-**Azure VM** is a next-generation virtualization and code protection system engineered specifically for Lua 5.1 and Luau environments (including Roblox Mobile and PC executors). 
+**Azure VM** reads Lua 5.1 bytecode and emits a Lua-based interpreter with an encoded instruction payload. It also has a limited text preprocessor for some Luau syntax. Full Luau compatibility and Roblox executor compatibility have **not** been established by the repository's tests.
 
-Traditional obfuscators rely merely on string encryption, variable renaming, or easily-patterned macro substitution. Azure VM converts your source code into a custom, non-standard virtual bytecode stream executed inside a lightweight, sandboxed virtual interpreter. Every function receives randomized opcodes, dynamically mutated instruction formats, and rolling feedback encryption keys, rendering automated deobfuscators, AST pattern matchers, and static decompilers ineffective.
+Obfuscation can increase reverse-engineering effort, but it does not make code secret once it runs on a machine controlled by an analyst. The output contains the VM and its decoder; live values can be inspected or dumped. No claim of resistance to a particular deobfuscator is made without a reproducible test.
+
+Preset names containing **`Luraph`** are historical compatibility names for AzureVM configurations. This project is not Luraph, is not affiliated with Luraph, and has not been shown to match or exceed Luraph v15.
 
 ---
 
 ## 🌟 Key Architecture & Features
 
-### 1. ⚡ Zero-Freeze Roblox Executor Optimization
-- **Precomputed Lookup Table (`v[c]`):** Bytecode unpacker utilizes high-speed static lookup tables, reducing decryption time to under **2–5 milliseconds**.
-- **No Watchdog Timeouts:** Designed from the ground up to never stall the Roblox main thread or trigger script timeout warnings on mobile executors (Delta, Fluxus, Codex, Arceus X) and PC executors (Wave, Solara, Synapse Z).
-- **RAM Auto-Purge:** Interpreter automatically clears bytecode chunks, decompression buffers, and initialization tables immediately after mounting to maintain a near-zero memory footprint.
+### 1. Runtime and memory
+- Uses a byte lookup table during payload decoding.
+- Clears the transient decoded payload buffer after materializing prototypes. Live VM state remains in memory while needed.
+- Load time, runtime overhead, memory use, and executor timeout behavior depend on the script and environment; no universal bounds are claimed.
 
 ### 2. 🔀 Polymorphic Virtual ISA & Dynamic Encryption
-- **Unique Per-Build Opcode Mapping:** Every build generates a distinct set of mathematical relationships and opcode dispatch tables.
-- **State-Chained Feedback Cipher:** Instructions are encoded through a rolling keystream cipher where each encrypted instruction influences the key of the next, preventing partial-block substitution attacks.
-- **Instruction Field Shuffling:** Bitwise slot layouts for registers, operands, and constant pool indices mutate dynamically across compilation passes.
+- **Seeded opcode mapping:** The build seed controls a shuffled opcode map. Fixed seeds produce reproducible output.
+- **Rolling instruction encoding:** Each encoded instruction contributes to the key used for the next instruction. The decoder and key material are included in the generated file.
+- **Per-prototype field layouts:** Nested functions can use different arrangements of instruction fields.
 
 ### 3. 🛡️ Advanced AST Mutation Pipeline
-- **Control Flow Flattening (CFF):** Restructures linear statement blocks into state-driven dispatch loops with randomized transition graphs.
-- **Opaque Predicates:** Injects mathematically invariant condition blocks (e.g., constant algebraic identities) that confuse static analysis tools and data-flow analyzers.
-- **String Encryption & Splitting:** Splits sensitive strings across non-contiguous arrays and resolves them with dynamic seed keys at runtime.
-- **Numbers to Expressions:** Transforms integers and floats into nested mathematical expressions.
+- **Control Flow Flattening (CFF):** Available in the `AzureGodUltra` preset for eligible statement blocks.
+- **Opaque Predicates:** Available in the `AzureGodUltra` preset.
+- **String transforms:** `SplitStrings` and `EncryptStrings` are enabled in the non-default advanced presets.
+- **Numbers to Expressions:** Enabled in the non-default advanced presets.
 
-### 4. 📦 Compact Single-Line Delivery
-- Generates clean, ready-to-deploy single-line outputs: `return(function(...) ... end)(...);`.
-- Zero external runtime dependencies — executes directly in standard vanilla Lua 5.1, LuaJIT, and Luau.
+### 4. Output format
+- Generates a single-line Lua wrapper after a header comment.
+- The generated runtime is intended for Lua 5.1-compatible environments. LuaJIT and Luau behavior must be tested for the target environment.
 
 ---
 
 ## 📊 Protection Profiles (Presets)
 
-| Preset | Virtual Machine | AST Transformations | Protection Level | Recommended Use Case |
-| :--- | :--- | :--- | :---: | :--- |
-| **`Luraph`** | Azure VM Standard | Clean VM Packaging | ⭐⭐⭐⭐ | Fast deployment, minimal file size |
-| **`Luraph14`** | Azure VM Enhanced | String Encryption + Splitting | ⭐⭐⭐⭐⭐ | General Roblox scripts & utilities |
-| **`Luraph15`** | Azure VM Ultra | Strings + Number Expressions + Decoy Traps | ⭐⭐⭐⭐⭐+ | Commercial & private gaming hubs |
-| **`AzureGod`** | Azure VM Enhanced | Deep AST Pre-Mutation + VM | ⭐⭐⭐⭐⭐⭐ | High-value game logic & anti-cheat |
-| **`AzureGod15`** | Azure VM Ultra | Full Pipeline + Decoy Opcodes (1.5x) | 👑 **Elite** | Maximum deobfuscation resistance |
-| **`AzureGodUltra`** | Azure VM Ultra | **CFF + Opaque Predicates + Full Pipeline** | 🔱 **Supreme** | The ultimate defense against decompilers |
+| Preset | Additional transforms before AzureVM | Decoy density |
+| :--- | :--- | :---: |
+| **`Luraph`** | None | 1.0 |
+| **`Luraph14`**, **`Luraph15`** | Split strings, encrypt strings, numbers to expressions | 1.0 / 1.2 |
+| **`AzureGod`**, **`AzureGod15`** | Split strings, encrypt strings, numbers to expressions | 1.5 |
+| **`AzureGodUltra`** | Above, plus eligible-block CFF and opaque predicates | 1.5 |
+
+The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine version. More transforms can increase output size and runtime cost; the table is not a security ranking.
 
 ---
 
@@ -95,7 +96,7 @@ Traditional obfuscators rely merely on string encryption, variable renaming, or 
 These changes have **not** been benchmarked against Luraph and do not establish stronger protection than Luraph.
 
 ### Prerequisites
-- **Lua 5.1** or **LuaJIT** installed on Linux, Termux (Android), macOS, or Windows.
+- **Lua 5.1** for compilation. The bytecode reader expects Lua 5.1 chunks; LuaJIT bytecode is not a supported compiler input.
 
 ### CLI Syntax
 ```bash
@@ -179,4 +180,4 @@ Distributed under the **MIT License**.
 - **Prometheus Lua Obfuscator:** Copyright (c) [levno-710](https://github.com/prometheus-lua) (MIT License).
 - **Azure VM Additions & Engine:** Copyright (c) 2026 **Azure**.
 
-> *Active development in progress. Regular updates, bug fixes, and security enhancements are deployed weekly.*
+> Development status and release cadence should be verified from the repository history.
