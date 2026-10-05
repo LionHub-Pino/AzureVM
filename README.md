@@ -89,6 +89,8 @@ Traditional obfuscators rely merely on string encryption, variable renaming, or 
 - Default builds use OS randomness (`/dev/urandom` where available) instead of a seconds-resolution timestamp. `--seed` now controls the VM build as documented, so fixed-seed builds are reproducible. On platforms without `/dev/urandom`, the fallback is not cryptographically unpredictable.
 - Run the focused checks with `lua5.1 tests/payload-integrity.lua && lua5.1 tests/seed-behavior.lua`.
 - Run `lua5.1 tests/false-constants.lua` and `bash tests/verify-vm.sh Luraph` to verify VM output against Lua 5.1 behavior. The VM now preserves `false` and `nil` RK operands rather than losing them to the Lua `and/or` idiom.
+- Each nested prototype now receives an independent instruction-field layout (three supported layouts), rather than sharing one layout across the whole output. Run `lua5.1 tests/per-prototype-layout.lua` for a ten-seed mixed-layout check. This raises static analysis effort but cannot prevent inspection of plaintext values during execution.
+- The runtime releases the transient decoded payload buffer after materializing prototypes. This reduces retained plaintext copies; it does not make live VM state undumpable.
 
 These changes have **not** been benchmarked against Luraph and do not establish stronger protection than Luraph.
 

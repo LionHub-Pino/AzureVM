@@ -11,7 +11,7 @@ failed=0
 for source in "$repo"/tests/*.lua; do
     name="$(basename "$source")"
     case "$name" in
-        false-constants.lua|payload-integrity.lua|seed-behavior.lua) continue ;;
+        false-constants.lua|payload-integrity.lua|seed-behavior.lua|per-prototype-layout.lua) continue ;;
     esac
 
     lua5.1 "$source" >"$tmp/expected" 2>"$tmp/expected.err"

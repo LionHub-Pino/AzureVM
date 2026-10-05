@@ -76,7 +76,7 @@ local function mod_inverse_256(m)
 end
 
 -- Binary format per node:
---   [1B np][1B up][1B ms][1B iv][1B om][1B oa]
+--   [1B np][1B up][1B ms][1B iv][1B om][1B oa][1B lm]
 --   [4B num_ins][5B*num_ins instructions (40-bit each)]
 --   [4B num_ks][per const: 1B type + data]
 --     t=0: no extra data
@@ -92,6 +92,7 @@ local function serialize_binary(node)
     out[#out+1] = string.char(node.iv or 0)
     out[#out+1] = string.char(node.om or 1)
     out[#out+1] = string.char(node.oa or 0)
+    out[#out+1] = string.char(node.lm or 0)
 
     -- Instructions (40-bit / 5 bytes each)
     local ins = node.ins
@@ -224,9 +225,6 @@ function Encoder.new(seed)
         self.reverse_op_map[r] = op
     end
     
-    -- Polymorphic instruction layout (Mode 0: OP,A,B,C; Mode 1: A,OP,C,B; Mode 2: OP,B,C,A)
-    self.layout_mode = seed % 3
-
     self.initial_key = math.random(100000, 9999999)
     self.l_mult = 1664525
     self.l_add  = 1013904223
@@ -254,6 +252,8 @@ end
 -- Encode prototype tree recursively
 -- =====================================================================
 function Encoder:encode_prototype(proto)
+    -- Each prototype gets its own layout, rather than one layout per build.
+    local layout_mode = math.random(0, 2)
     local op_mul
     repeat op_mul = math.random(1, 255) until (op_mul % 2 == 1)
     local op_add = math.random(0, 255)
@@ -267,6 +267,7 @@ function Encoder:encode_prototype(proto)
         iv = proto.isVararg or 0,
         om = op_minv,
         oa = op_add,
+        lm = layout_mode,
         ks = {},
         ins = {},
         ps = {},
@@ -312,10 +313,10 @@ function Encoder:encode_prototype(proto)
         end
 
         local raw
-        if self.layout_mode == 0 then
+        if layout_mode == 0 then
             -- Standard: OP(8) | A(8) | B(9) | C(9)
             raw = rand_op + a * 256 + b * 65536 + c * 33554432
-        elseif self.layout_mode == 1 then
+        elseif layout_mode == 1 then
             -- Permuted 1: A(8) | OP(8) | C(9) | B(9)
             raw = a + rand_op * 256 + c * 65536 + b * 33554432
         else

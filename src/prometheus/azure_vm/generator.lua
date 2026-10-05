@@ -83,7 +83,8 @@ local ms=j(bin,pos) pos=pos+1
 local iv=j(bin,pos) pos=pos+1
 local om=j(bin,pos) pos=pos+1
 local oa=j(bin,pos) pos=pos+1
-local proto={np=np,up=up,ms=ms,iv=iv,om=om,oa=oa,ins={},ks={},ps={}}
+local lm=j(bin,pos) pos=pos+1
+local proto={np=np,up=up,ms=ms,iv=iv,om=om,oa=oa,lm=lm,ins={},ks={},ps={}}
 local ni=__R32(bin,pos) pos=pos+4
 for i=1,ni do
 local a,b,c2,d2,e2=j(bin,pos,pos+4) pos=pos+5
@@ -118,6 +119,7 @@ __B=(__B+__A)%65521
 end
 if __B*65536+__A~=__CHECKSUM then error("AzureVM payload integrity check failed",0) end
 local __AST=(__READP(__BIN,1))
+__BIN=nil c=nil
 __AST.rt=true
 ]=]
 
@@ -131,6 +133,7 @@ local function __EXEC(pr,env,upvals,...)
 local __REG,__VARGS,__OPENUVS,__STOP,__IPC=(table.create and table.create(pr.ms or 64)) or {},{...},{},0,1
 local __VLEN=select('#',...)
 local __INSTR,__KONST,__PROTOS=pr.ins,pr.ks,pr.ps
+local __LAYOUT=pr.lm
 local function __RK(i)
 if i>=256 then return __KONST[i-256] end
 return __REG[i]
@@ -360,7 +363,6 @@ end
 function Generator.emit(encoded_root, encoder_instance, options)
     options = options or {}
     local op_map  = encoder_instance.opcode_map
-    local layout  = encoder_instance.layout_mode or 0
     local lph_ver = options.LuraphVersion or 15
 
     local blob, pad, checksum = encoder_instance:serialize_to_blob(encoded_root)
@@ -379,7 +381,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
         "byte","char","sub","gsub","floor","unpack","pack",
         "r32","r16","r64","decode","readp","str_key","payload","pad_v","bkey",
         "bin_v","ast_v","wrap","exec","reg","vargs","openuvs","stop","ipc",
-        "vlen","instr","konst","protos","rk","closeuv","kseed","klm","kla","kmod",
+        "vlen","instr","konst","protos","rk","layout","closeuv","kseed","klm","kla","kmod",
         "disp","ctr","genv","loader","parse","poison","preve","pom","poa"
     }
     for _, k in ipairs(var_keys) do V[k] = ng() end
@@ -418,15 +420,20 @@ function Generator.emit(encoded_root, encoder_instance, options)
     decoder = decoder:gsub("__AST",     function() return V.ast_v end)
     code_parts[#code_parts+1] = minify(decoder)
 
-    -- === Build __PARSE_BODY according to layout_mode ===
-    local parse_body
-    if layout == 0 then
-        parse_body = string.format("local op=w%%256 local a=%s(w/256)%%256 local b=%s(w/65536)%%512 local c=%s(w/33554432)%%512 local bx=b+c*512 return op,a,b,c,bx,bx-131071", V.floor, V.floor, V.floor)
-    elseif layout == 1 then
-        parse_body = string.format("local a=w%%256 local op=%s(w/256)%%256 local c=%s(w/65536)%%512 local b=%s(w/33554432)%%512 local bx=b+c*512 return op,a,b,c,bx,bx-131071", V.floor, V.floor, V.floor)
-    else
-        parse_body = string.format("local op=w%%256 local b=%s(w/256)%%512 local c=%s(w/131072)%%512 local a=%s(w/67108864)%%256 local bx=b+c*512 return op,a,b,c,bx,bx-131071", V.floor, V.floor, V.floor)
-    end
+    -- Decode the layout selected for this prototype.
+    local parse_body = string.format([[
+local op,a,b,c
+if %s==0 then
+op=w%%256 a=%s(w/256)%%256 b=%s(w/65536)%%512 c=%s(w/33554432)%%512
+elseif %s==1 then
+a=w%%256 op=%s(w/256)%%256 c=%s(w/65536)%%512 b=%s(w/33554432)%%512
+else
+op=w%%256 b=%s(w/256)%%512 c=%s(w/131072)%%512 a=%s(w/67108864)%%256
+end
+local bx=b+c*512 return op,a,b,c,bx,bx-131071]],
+        V.layout, V.floor, V.floor, V.floor,
+        V.layout, V.floor, V.floor, V.floor,
+        V.floor, V.floor, V.floor)
 
     -- === Build VM_ENGINE with polymorphic names ===
     local seed_s  = tostring(encoder_instance.seed)
@@ -446,6 +453,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
     engine = engine:gsub("__INSTR",      function() return V.instr end)
     engine = engine:gsub("__KONST",      function() return V.konst end)
     engine = engine:gsub("__PROTOS",     function() return V.protos end)
+    engine = engine:gsub("__LAYOUT",     function() return V.layout end)
     engine = engine:gsub("__RK",         function() return V.rk end)
     engine = engine:gsub("__CLOSEUV",    function() return V.closeuv end)
     engine = engine:gsub("__KSEED",      function() return V.kseed end)
