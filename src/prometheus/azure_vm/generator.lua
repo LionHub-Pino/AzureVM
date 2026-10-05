@@ -131,6 +131,10 @@ local function __EXEC(pr,env,upvals,...)
 local __REG,__VARGS,__OPENUVS,__STOP,__IPC=(table.create and table.create(pr.ms or 64)) or {},{...},{},0,1
 local __VLEN=select('#',...)
 local __INSTR,__KONST,__PROTOS=pr.ins,pr.ks,pr.ps
+local function __RK(i)
+if i>=256 then return __KONST[i-256] end
+return __REG[i]
+end
 local __POM,__POA=pr.om,pr.oa
 local __CHKSUM, __ILEN = 0, #__INSTR
 if __ILEN > 16 then __ILEN = 16 end
@@ -375,7 +379,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
         "byte","char","sub","gsub","floor","unpack","pack",
         "r32","r16","r64","decode","readp","str_key","payload","pad_v","bkey",
         "bin_v","ast_v","wrap","exec","reg","vargs","openuvs","stop","ipc",
-        "vlen","instr","konst","protos","closeuv","kseed","klm","kla","kmod",
+        "vlen","instr","konst","protos","rk","closeuv","kseed","klm","kla","kmod",
         "disp","ctr","genv","loader","parse","poison","preve","pom","poa"
     }
     for _, k in ipairs(var_keys) do V[k] = ng() end
@@ -442,6 +446,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
     engine = engine:gsub("__INSTR",      function() return V.instr end)
     engine = engine:gsub("__KONST",      function() return V.konst end)
     engine = engine:gsub("__PROTOS",     function() return V.protos end)
+    engine = engine:gsub("__RK",         function() return V.rk end)
     engine = engine:gsub("__CLOSEUV",    function() return V.closeuv end)
     engine = engine:gsub("__KSEED",      function() return V.kseed end)
     engine = engine:gsub("__KLM",        function() return V.klm end)
@@ -525,6 +530,17 @@ function Generator.emit(encoded_root, encoder_instance, options)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx)%s(a)end', D, O[35], R, CL)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local p=%s[bx]local uv={} for i=0,p.up-1 do local prev_e=(%s>1)and(%s[%s-1]or 0)or 0 local e=%s[%s] local nk=(%s+%s*%s+%s+prev_e*37)%%%s %s=%s+1 local w=(e-nk)%%%s if w<0 then w=w+%s end local op,_,pb=%s(w) op=((op-%s)*%s)%%256 if op==%d then if not %s[pb]then %s[pb]={%s,pb}end uv[i]=%s[pb] else uv[i]=upvals[pb]end end %s[a]=%s(p,env,uv) end', D, O[36], R, PS, PC, INS, PC, INS, PC, S, PC, LM, LA, LMOD, PC, PC, LMOD, LMOD, PRS, V.poa, V.pom, O[0], OUV, OUV, R, OUV, R, WR)
     d_entries[#d_entries+1] = string.format('%s[%d]=function(%s,a,b,c,bx,sbx) local n=(b==0)and(%s-pr.np)or(b-1) for i=1,n do %s[a+i-1]=%s[pr.np+i]end if b==0 then %s=a+n-1 end end', D, O[37], R, VLEN, R, VA, TOP)
+
+    -- Lua's `and/or` idiom loses false and nil constants in RK operands.
+    local function replace_literal(s, old, new)
+        return (s:gsub(old:gsub("([^%w])", "%%%1"), new))
+    end
+    local b_rk = "(b>=256)and " .. K .. "[b-256]or " .. R .. "[b]"
+    local c_rk = "(c>=256)and " .. K .. "[c-256]or " .. R .. "[c]"
+    for i, entry in ipairs(d_entries) do
+        entry = replace_literal(entry, b_rk, V.rk .. "(b)")
+        d_entries[i] = replace_literal(entry, c_rk, V.rk .. "(c)")
+    end
 
     -- Shuffle dispatch order
     shuffle(d_entries)
