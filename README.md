@@ -56,6 +56,7 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 - **Seeded opcode mapping:** The build seed controls a shuffled opcode map. Fixed seeds produce reproducible output.
 - **Rolling instruction encoding:** Each encoded instruction contributes to the key used for the next instruction. The decoder and key material are included in the generated file.
 - **Chained field layouts:** Nested functions have different base layouts, and each instruction's field arrangement also depends on the previous encoded instruction.
+- **Per-string stream diversity:** Each string constant gets a unique build-local nonce and ciphertext feedback, so identical literals need not have identical encoded bytes. This is reversible obfuscation, not cryptographic encryption; plaintext values still exist after decoding.
 
 ### 3. 🛡️ Advanced AST Mutation Pipeline
 - **Control Flow Flattening (CFF):** Available in the `AzureGodUltra` preset for eligible statement blocks.
@@ -94,6 +95,12 @@ The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine
 - Each instruction now selects one of those layouts using the preceding encoded word. Run `lua5.1 tests/chained-layout.lua` for an instruction-level decoding check across ten seeds. The VM and decoder still ship with the output, so this is not a guarantee against devirtualization.
 - Chained layout decoding adds runtime work. In one local 10,000-iteration Lua 5.1 loop sample, median wall time rose from 0.1002 s to 0.1136 s (9 runs each). This is not a general performance benchmark; measure your own workload before deploying.
 - The runtime releases the transient decoded payload buffer after materializing prototypes. This reduces retained plaintext copies; it does not make live VM state undumpable.
+- New builds use 32-bit string lengths, rather than silently wrapping strings at 65,536 bytes. `lua5.1 tests/regression/string-constants.lua` checks binary strings, long strings, per-constant nonce diversity, ciphertext feedback, and fixed-seed reproducibility.
+- Numeric packing uses Lua 5.1's [`math.frexp`](https://www.lua.org/manual/5.1/manual.html#pdf-math.frexp) instead of logarithmic exponent estimation. Serializer and AST regressions cover extreme doubles, signed zero, and precision-sensitive literals: `lua5.1 tests/regression/numeric-constants.lua` and `lua5.1 tests/regression/numeric-pipeline.lua`.
+
+The string payload format is internal. Existing generated files keep their embedded decoder; newly generated files embed the updated decoder. Fixed seeds are reproducible within the same implementation, not a guarantee of byte-identical output across upgrades.
+
+**Signed-zero compatibility:** AST output deliberately preserves the sign of a literal `-0`, including when transforms inject `+0` constants. This may differ from Lua 5.1's native constant-pooling quirks in programs mixing positive- and negative-zero literals. Check behavior on your target runtime if your code relies on this distinction.
 
 These changes have **not** been benchmarked against Luraph and do not establish stronger protection than Luraph.
 

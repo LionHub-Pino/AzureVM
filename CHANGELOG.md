@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Each string constant now receives a unique build-local nonce and a rolling stream with ciphertext feedback, including identical literals in different prototypes. This is reversible obfuscation, not cryptographic encryption.
+- Internal string payload lengths use 32 bits instead of 16, with regression coverage for empty strings, all byte values, and strings larger than 65,535 bytes.
+- Numeric regression tests cover 164 serializer roundtrips, 18 preset/seed combinations, and an additional semantic fixture in every advertised preset.
+
+### Fixed
+- IEEE754 serialization preserves signed zero, subnormals, maximum finite values, infinities, and NaN semantics using Lua 5.1-compatible byte construction.
+- AST numeric output uses enough decimal digits to round-trip doubles; scientific/hexadecimal mutations avoid lossy representations and zero signs are protected from arithmetic rewrites.
+- Negative zero is emitted using a runtime expression to avoid Lua 5.1 pooling it with positive-zero constants introduced by AST transforms.
+- Hexadecimal mutation checks the portable unsigned 32-bit range before calling the host integer formatter.
+
+### Compatibility
+- Existing generated files and release `v1.0.0` are unchanged. New output includes its own updated decoder; fixed-seed output bytes may differ between versions.
+- AST output now deliberately preserves a literal negative zero's sign. Programs depending on Lua 5.1's native pooling of `+0` and `-0` constants may observe a difference; this normalization is not a promise to reproduce that compiler quirk.
+
 ## [1.0.0] - 2026-10-21
 
 First versioned AzureVM release, including the latest stability improvements.
