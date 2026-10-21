@@ -43,7 +43,7 @@ local function print_help()
     print("                           AzureGod15 : Same transforms, template mode 15")
     print("                           AzureGodUltra : Adds CFF and opaque predicates")
     print("  --header <text>        Custom comment header (default: AzureVM template mode)")
-    print("  --seed <number>        Fixed PRNG seed for deterministic compilation")
+    print("  --seed <number>        Integer 1..2147483647 for deterministic compilation")
     print("  -v, --version          Show version info")
     print("  -h, --help             Show this help menu")
     print("")
@@ -67,6 +67,19 @@ local preset = "Luraph"
 local seed = require("prometheus.azure_vm.seed").random()
 local header_text = nil
 
+local function fail(message)
+    io.stderr:write("[-] Error: " .. message .. "\n")
+    os.exit(1)
+end
+
+local function option_value(index, option)
+    local value = args[index + 1]
+    if not value or value:match("^%-%-") then
+        fail("Missing value for " .. option)
+    end
+    return value
+end
+
 local i = 1
 while i <= #args do
     local arg = args[i]
@@ -77,21 +90,33 @@ while i <= #args do
         print("AzureVM v1.0.0")
         os.exit(0)
     elseif arg == "-o" or arg == "--out" then
+        output_file = option_value(i, arg)
         i = i + 1
-        output_file = args[i]
     elseif arg == "--preset" then
+        preset = option_value(i, arg)
         i = i + 1
-        preset = args[i]
     elseif arg == "--header" then
+        header_text = option_value(i, arg)
         i = i + 1
-        header_text = args[i]
     elseif arg == "--seed" then
+        local value = option_value(i, arg)
+        seed = tonumber(value)
+        if not seed or seed < 1 or seed > 2147483647 or seed % 1 ~= 0 then
+            fail("Seed must be an integer between 1 and 2147483647")
+        end
         i = i + 1
-        seed = tonumber(args[i]) or seed
     elseif not input_file and not arg:match("^%-") then
         input_file = arg
+    else
+        fail("Unexpected argument: " .. arg)
     end
     i = i + 1
+end
+
+local presets = require("presets")
+local pipeline_config = presets[preset]
+if not pipeline_config then
+    fail("Unknown preset: " .. preset)
 end
 
 if not input_file then
@@ -132,8 +157,6 @@ local final_code
 
 -- For AzureGod: Apply AST mutation on raw source FIRST, then compile into VM
 print("[1/2] Loading Prometheus presets...")
-local presets = require("presets")
-local pipeline_config = presets[preset] or presets["AzureGod"]
 
 if header_text then
     for _, step in ipairs(pipeline_config.Steps or {}) do
@@ -147,6 +170,7 @@ end
 print("[2/2] Applying obfuscation pipeline...")
 local Pipeline = require("prometheus.pipeline")
 local pipeline = Pipeline:fromConfig(pipeline_config)
+pipeline.Seed = seed
 pipeline.seed = seed
 final_code = pipeline:apply(source_code)
 

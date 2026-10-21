@@ -7,24 +7,32 @@
 local Reader = {}
 
 function Reader.parse(dump)
+    if type(dump) ~= "string" then error("Invalid bytecode: expected a string") end
     local pos = 1
     local len = #dump
 
+    local function ensure(count)
+        if count < 0 or count > len - pos + 1 then
+            error("Unexpected EOF in bytecode chunk at byte " .. pos)
+        end
+    end
+
     local function read_byte()
-        if pos > len then error("Unexpected EOF in bytecode chunk") end
+        ensure(1)
         local b = dump:byte(pos)
         pos = pos + 1
         return b
     end
 
     local function read_bytes(count)
-        if pos + count - 1 > len then error("Unexpected EOF in bytecode chunk") end
+        ensure(count)
         local sub = dump:sub(pos, pos + count - 1)
         pos = pos + count
         return sub
     end
 
     local function read_int()
+        ensure(4)
         local b1, b2, b3, b4 = dump:byte(pos, pos + 3)
         pos = pos + 4
         return b1 + b2 * 256 + b3 * 65536 + b4 * 16777216
@@ -62,8 +70,12 @@ function Reader.parse(dump)
         if sizeof_sizet == 4 then
             return read_int()
         else
+            ensure(8)
             local b1, b2, b3, b4, b5, b6, b7, b8 = dump:byte(pos, pos + 7)
             pos = pos + 8
+            if b5 ~= 0 or b6 ~= 0 or b7 ~= 0 or b8 ~= 0 then
+                error("Unsupported bytecode string length: exceeds 32-bit range")
+            end
             return b1 + b2 * 256 + b3 * 65536 + b4 * 16777216
         end
     end
@@ -71,12 +83,17 @@ function Reader.parse(dump)
     local function read_string()
         local slen = read_size_t()
         if slen == 0 then return "" end
+        ensure(slen)
+        if dump:byte(pos + slen - 1) ~= 0 then
+            error("Invalid bytecode string: missing null terminator")
+        end
         local s = dump:sub(pos, pos + slen - 2) -- Strip trailing null byte
         pos = pos + slen
         return s
     end
 
     local function read_double()
+        ensure(8)
         local b1, b2, b3, b4, b5, b6, b7, b8 = dump:byte(pos, pos + 7)
         pos = pos + 8
         local sign = (b8 >= 128) and -1 or 1
@@ -92,7 +109,14 @@ function Reader.parse(dump)
         end
     end
 
-    local function load_function()
+    local function read_count(minimum_bytes)
+        local count = read_int()
+        ensure(count * minimum_bytes)
+        return count
+    end
+
+    local function load_function(depth)
+        if depth > 200 then error("Invalid bytecode: prototype nesting exceeds 200") end
         local proto = {}
         proto.source = read_string()
         proto.lineDefined = read_int()
@@ -103,7 +127,7 @@ function Reader.parse(dump)
         proto.maxStackSize = read_byte()
 
         -- Read Instructions
-        local num_inst = read_int()
+        local num_inst = read_count(4)
         proto.instructions = {}
         for i = 1, num_inst do
             local inst = read_int()
@@ -125,7 +149,7 @@ function Reader.parse(dump)
         end
 
         -- Read Constants
-        local num_consts = read_int()
+        local num_consts = read_count(1)
         proto.constants = {}
         for i = 0, num_consts - 1 do
             local ktype = read_byte()
@@ -138,29 +162,29 @@ function Reader.parse(dump)
             elseif ktype == 4 then -- string
                 proto.constants[i] = { type = 4, value = read_string() }
             else
-                error("Unknown constant type: " .. tostring(ktype))
+                error("Invalid bytecode constant type: " .. tostring(ktype))
             end
         end
 
         -- Read Child Prototypes
-        local num_protos = read_int()
+        local num_protos = read_count(1)
         proto.prototypes = {}
         for i = 0, num_protos - 1 do
-            proto.prototypes[i] = load_function()
+            proto.prototypes[i] = load_function(depth + 1)
         end
 
         -- Strip / Skip Debug Information
-        local num_lines = read_int()
+        local num_lines = read_count(4)
         pos = pos + num_lines * 4
 
-        local num_locvars = read_int()
+        local num_locvars = read_count(sizeof_sizet + 8)
         for i = 1, num_locvars do
             read_string()
             read_int()
             read_int()
         end
 
-        local num_upval_names = read_int()
+        local num_upval_names = read_count(sizeof_sizet)
         for i = 1, num_upval_names do
             read_string()
         end
@@ -168,7 +192,9 @@ function Reader.parse(dump)
         return proto
     end
 
-    return load_function()
+    local proto = load_function(1)
+    if pos ~= len + 1 then error("Invalid bytecode: trailing data") end
+    return proto
 end
 
 return Reader
