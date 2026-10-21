@@ -117,7 +117,9 @@ function NumbersToExpressions:CreateNumberExpression(val, depth)
 		end
 
 		if format == "hex" then
-			if val ~= math.floor(val) or val < 0 then
+			-- Lua 5.1 casts %X through a platform-dependent unsigned C integer.
+			-- Range-check before formatting, not just after a potentially invalid cast.
+			if val ~= math.floor(val) or val < 0 or val > 4294967295 then
 				return Ast.NumberExpression(val)
 			end
 			local hexStr = string.format("0x%X", val)

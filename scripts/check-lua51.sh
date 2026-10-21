@@ -10,6 +10,7 @@ for test in payload-integrity seed-behavior false-constants per-prototype-layout
 done
 lua5.1 tests/regression/reader-validation.lua
 lua5.1 tests/regression/numeric-constants.lua
+lua5.1 tests/regression/numeric-hex-range.lua
 lua5.1 tests/regression/numeric-pipeline.lua
 lua5.1 tests/regression/string-constants.lua
 lua5.1 tests/regression/benchmark-statistics.lua
