@@ -57,7 +57,7 @@ local b={} for x=0,7 do b[x+1]=j(s,i+x) end
 local sign=(b[8]>=128)and -1 or 1
 local exp=(b[8]%128)*16+__FLOOR(b[7]/16)
 local mant=(b[7]%16)*(2^48)+b[6]*(2^40)+b[5]*(2^32)+b[4]*(2^24)+b[3]*(2^16)+b[2]*256+b[1]
-if exp==0 then if mant==0 then return 0 end return sign*(mant/2^52)*2^-1022 end
+if exp==0 then if mant==0 then return sign*0 end return sign*(mant/2^52)*2^-1022 end
 if exp==2047 then return mant==0 and sign*(1/0) or (0/0) end
 return sign*(1+mant/2^52)*2^(exp-1023)
 end

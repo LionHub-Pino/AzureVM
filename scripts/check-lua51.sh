@@ -9,6 +9,7 @@ for test in payload-integrity seed-behavior false-constants per-prototype-layout
     lua5.1 "tests/$test.lua"
 done
 lua5.1 tests/regression/reader-validation.lua
+lua5.1 tests/regression/numeric-constants.lua
 lua5.1 tests/regression/benchmark-statistics.lua
 bash tests/cli-validation.sh
 bash tests/benchmark-validation.sh

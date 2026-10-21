@@ -46,16 +46,23 @@ local function w16(n)
 end
 
 local function w64_double(v)
-    if v ~= v then return "\xff\xff\xff\xff\xff\xff\xff\xff" end
-    if v == 1/0  then return "\x00\x00\x00\x00\x00\x00\xf0\x7f" end
-    if v == -1/0 then return "\x00\x00\x00\x00\x00\x00\xf0\xff" end
+    -- Decimal bytes are portable to Lua 5.1; hexadecimal escapes are not.
+    if v ~= v then return string.char(0, 0, 0, 0, 0, 0, 248, 127) end
     local sign = 0
-    if v < 0 then sign = 1; v = -v end
-    if v == 0 then return string.rep("\0", 8) end
-    local exp = math.floor(math.log(v) / math.log(2))
-    local mant = v / (2^exp) - 1
-    exp = exp + 1023
-    local m52 = math.floor(mant * (2^52) + 0.5)
+    if v < 0 or (v == 0 and 1/v < 0) then sign = 1 end
+    v = math.abs(v)
+    local exp, m52
+    if v == math.huge then
+        exp, m52 = 2047, 0
+    elseif v == 0 then
+        exp, m52 = 0, 0
+    elseif v < 2^-1022 then
+        exp, m52 = 0, v / 2^-1074
+    else
+        local fraction, exponent = math.frexp(v)
+        exp = exponent + 1022
+        m52 = (fraction * 2 - 1) * 2^52
+    end
     local b = {}
     for i = 1, 6 do
         b[i] = m52 % 256
