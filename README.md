@@ -112,7 +112,7 @@ Run `bash scripts/check-lua51.sh` for the full quality gate: syntax checks, focu
 
 `lua5.1 benchmark.lua 5` runs five measured samples per native Lua microbenchmark after a warm-up and prints median/min/max CPU time. `lua5.1 scripts/benchmark-vm.lua 5 > benchmark-vm.csv` compares native fixtures against the baseline AzureVM compiler using two fixed seeds, checks returned results on every run, and reports compile CPU time, output size, median execution CPU time, and slowdown. VM execution measurements include initialization/decoding on each invocation; they exclude Lua source parsing and do not measure the optional AST transforms. Benchmark ratios for very short native fixtures are sensitive to timer resolution. Benchmarks are informational: compare results on the same machine and Lua build; CI timings are not performance guarantees.
 
-GitHub Actions runs syntax checks, regression tests, VM semantic comparisons, and the informational benchmark on pushes and pull requests. Pushing tag `v1.0.0` triggers creation of the GitHub Release from `CHANGELOG.md`.
+GitHub Actions runs syntax checks, regression tests, VM semantic comparisons, and the informational benchmark on pushes and pull requests. Pushing a stable version tag (for example `v2.0.0`) runs the release quality gate, verifies the CLI version matches the tag, and publishes the matching version's section from `CHANGELOG.md` as GitHub Release notes.
 
 ### CLI Syntax
 ```bash

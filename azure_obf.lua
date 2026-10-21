@@ -87,7 +87,7 @@ while i <= #args do
         print_help()
         os.exit(0)
     elseif arg == "-v" or arg == "--version" then
-        print("AzureVM v1.0.0")
+        print("AzureVM v2.0.0")
         os.exit(0)
     elseif arg == "-o" or arg == "--out" then
         output_file = option_value(i, arg)

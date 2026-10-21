@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## [2.0.0] - 2026-10-22
+
+This release includes a signed-zero behavior change; review the compatibility notes before upgrading from v1.0.0.
 
 ### Added
 - Each string constant now receives a unique build-local nonce and a rolling stream with ciphertext feedback, including identical literals in different prototypes. This is reversible obfuscation, not cryptographic encryption.
@@ -16,6 +18,11 @@
 ### Compatibility
 - Existing generated files and release `v1.0.0` are unchanged. New output includes its own updated decoder; fixed-seed output bytes may differ between versions.
 - AST output now deliberately preserves a literal negative zero's sign. Programs depending on Lua 5.1's native pooling of `+0` and `-0` constants may observe a difference; this normalization is not a promise to reproduce that compiler quirk.
+
+### Verification
+- 102 semantic comparisons across six presets passed, together with 164 numeric serializer roundtrips and 18 numeric preset/seed combinations.
+- Long/binary string, nonce diversity, ciphertext feedback, deterministic output, payload integrity, reader validation, and benchmark regression checks passed.
+- Lua 5.1 CLI is the verified baseline. This release does not certify full Luau, executor, or web integration compatibility, or make cryptographic secrecy guarantees.
 
 ## [1.0.0] - 2026-10-21
 

@@ -2,7 +2,7 @@ name: Create GitHub Release
 
 on:
   push:
-    tags: ['v1.0.0']
+    tags: ['v*.*.*']
 
 permissions:
   contents: write
@@ -27,4 +27,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$TAG" --title "AzureVM $TAG" --notes-file CHANGELOG.md
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          VERSION="${TAG#v}"
+          test "$(lua5.1 azure_obf.lua --version)" = "AzureVM $TAG"
+          awk -v version="$VERSION" '
+            /^## \[/ {
+              if (printing) exit
+              printing = index($0, "## [" version "]") == 1
+            }
+            printing { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
+          test -s "$RUNNER_TEMP/release-notes.md"
+          gh release create "$TAG" --verify-tag --title "AzureVM $TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
