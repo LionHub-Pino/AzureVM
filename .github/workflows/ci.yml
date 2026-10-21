@@ -16,26 +16,22 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Install Lua 5.1
         run: |
           sudo apt-get update
           sudo apt-get install -y lua5.1
-      - name: Syntax-check Lua files
-        run: |
-          find . -path './.git' -prune -o -name '*.lua' -print0 | xargs -0 -n1 luac5.1 -p
-      - name: Run hardening regression tests
-        run: |
-          lua5.1 tests/payload-integrity.lua
-          lua5.1 tests/seed-behavior.lua
-          lua5.1 tests/false-constants.lua
-          lua5.1 tests/per-prototype-layout.lua
-          lua5.1 tests/chained-layout.lua
-      - name: Verify VM semantics
-        run: bash tests/verify-vm.sh Luraph
+      - name: Verify Lua 5.1 release quality
+        run: bash scripts/check-lua51.sh
       - name: Run informational benchmarks
-        run: lua5.1 benchmark.lua 5 | tee benchmark-results.txt
+        run: |
+          lua5.1 benchmark.lua 5 | tee benchmark-results.txt
+          lua5.1 scripts/benchmark-vm.lua 5 | tee benchmark-vm.csv
       - uses: actions/upload-artifact@v4
         with:
           name: lua51-benchmark-results
-          path: benchmark-results.txt
+          path: |
+            benchmark-results.txt
+            benchmark-vm.csv
           if-no-files-found: error

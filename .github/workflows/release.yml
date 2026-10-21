@@ -10,21 +10,17 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Install Lua 5.1
         run: |
           sudo apt-get update
           sudo apt-get install -y lua5.1
-      - name: Verify release
-        run: |
-          find . -path './.git' -prune -o -name '*.lua' -print0 | xargs -0 -n1 luac5.1 -p
-          lua5.1 tests/payload-integrity.lua
-          lua5.1 tests/seed-behavior.lua
-          lua5.1 tests/false-constants.lua
-          lua5.1 tests/per-prototype-layout.lua
-          lua5.1 tests/chained-layout.lua
-          bash tests/verify-vm.sh Luraph
+      - name: Verify Lua 5.1 release quality
+        run: bash scripts/check-lua51.sh
       - name: Publish release from tag
         env:
           GH_TOKEN: ${{ github.token }}

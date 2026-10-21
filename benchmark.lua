@@ -1,7 +1,7 @@
 -- Small, repeatable Lua runtime microbenchmarks. Results are informational;
 -- compare on the same machine/runtime and do not treat CI timings as a gate.
-local samples = tonumber(arg and arg[1]) or 5
-assert(samples >= 1 and samples <= 100 and samples % 1 == 0,
+local samples = (not arg or arg[1] == nil) and 5 or tonumber(arg[1])
+assert(samples and samples >= 1 and samples <= 100 and samples % 1 == 0,
 	"usage: lua5.1 benchmark.lua [samples: 1..100]")
 
 local benchmarks = {
@@ -50,7 +50,9 @@ for _, b in ipairs(benchmarks) do
 	local times = {}
 	for i = 1, samples do times[i] = measure(b[3], b[2]) end
 	table.sort(times)
-	local median = times[math.floor((#times + 1) / 2)]
+	local middle = math.floor(#times / 2) + 1
+	local median = #times % 2 == 1 and times[middle]
+		or (times[middle - 1] + times[middle]) / 2
 	print(string.format("%-22s %10d %10.6f %10.6f %10.6f", b[1], b[2], median, times[1], times[#times]))
 end
 if sink == math.huge then print(sink) end -- retain observable benchmark results

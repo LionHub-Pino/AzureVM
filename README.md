@@ -101,7 +101,9 @@ These changes have **not** been benchmarked against Luraph and do not establish 
 - **Lua 5.1** for compilation. The bytecode reader expects Lua 5.1 chunks; LuaJIT bytecode is not a supported compiler input.
 
 ### Tests and benchmarks
-Run the Lua 5.1 regression suite with `bash tests/verify-vm.sh Luraph`, plus the focused checks shown above. `lua5.1 benchmark.lua 5` runs five measured samples per microbenchmark after a warm-up and prints median/min/max CPU time. Benchmarks are informational: compare results on the same machine and Lua build; CI timings are not performance guarantees.
+Run `bash scripts/check-lua51.sh` for the full quality gate: syntax checks, focused regressions, CLI validation, malformed-bytecode tests, and behavior comparisons across all six advertised presets. This Linux/Ubuntu runner requires Lua 5.1 and GNU `timeout`. To check one preset, run `bash scripts/check-lua51.sh Luraph`. Each semantic fixture has a 30-second timeout (`VM_TEST_TIMEOUT` overrides it).
+
+`lua5.1 benchmark.lua 5` runs five measured samples per native Lua microbenchmark after a warm-up and prints median/min/max CPU time. `lua5.1 scripts/benchmark-vm.lua 5 > benchmark-vm.csv` compares native fixtures against the baseline AzureVM compiler using two fixed seeds, checks returned results on every run, and reports compile CPU time, output size, median execution CPU time, and slowdown. VM execution measurements include initialization/decoding on each invocation; they exclude Lua source parsing and do not measure the optional AST transforms. Benchmark ratios for very short native fixtures are sensitive to timer resolution. Benchmarks are informational: compare results on the same machine and Lua build; CI timings are not performance guarantees.
 
 GitHub Actions runs syntax checks, regression tests, VM semantic comparisons, and the informational benchmark on pushes and pull requests. Pushing tag `v1.0.0` triggers creation of the GitHub Release from `CHANGELOG.md`.
 
@@ -116,7 +118,7 @@ lua azure_obf.lua <input.lua> [options]
   --preset <name>        Select protection preset (default: Luraph)
                          Choices: Luraph, Luraph14, Luraph15, AzureGod, AzureGod15, AzureGodUltra
   --header <text>        Custom header comment in line 1
-  --seed <number>        Deterministic PRNG seed for reproducible builds
+  --seed <number>        Integer 1..2147483647 for reproducible builds
   -v, --version          Display version information
   -h, --help             Display help menu
 ```

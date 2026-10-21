@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- CLI rejects missing option values, unknown options/presets, extra inputs, and invalid seeds instead of silently falling back to different settings.
+- Fixed-seed CLI builds now seed both the AST transforms and VM encoder for reproducible advanced-preset output.
+- Bytecode reader bounds-checks integers, doubles, strings, counts, and debug data; rejects truncated chunks, unsupported large string lengths, missing string terminators, excessive prototype nesting, and trailing data.
+- Benchmark sample validation rejects nonnumeric input, and even-sized samples use the average of the two middle values.
+
+### Added
+- A shared Lua 5.1 quality gate covering all six advertised AzureVM presets, CLI behavior, and malformed-bytecode regression tests.
+- Per-fixture timeouts and stricter success requirements in the VM comparison harness.
+- Native-versus-VM benchmark CSV reports with correctness checks, two fixed seeds, compile cost, output size, and median execution time including VM startup/decoding.
+
 ## [1.0.0] - 2026-10-21
 
 First versioned AzureVM release.
