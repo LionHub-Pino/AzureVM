@@ -68,7 +68,7 @@ function NumbersToExpressions:init(_)
 		function(val, depth) -- Addition
 			local val2 = math.random(-2 ^ 20, 2 ^ 20)
 			local diff = val - val2
-			if tonumber(tostring(diff)) + tonumber(tostring(val2)) ~= val then
+			if diff + val2 ~= val then
 				return false
 			end
 			return Ast.AddExpression(
@@ -81,7 +81,7 @@ function NumbersToExpressions:init(_)
 		function(val, depth) -- Subtraction
 			local val2 = math.random(-2 ^ 20, 2 ^ 20)
 			local diff = val + val2
-			if tonumber(tostring(diff)) - tonumber(tostring(val2)) ~= val then
+			if diff - val2 ~= val then
 				return false
 			end
 			return Ast.SubExpression(
@@ -93,7 +93,7 @@ function NumbersToExpressions:init(_)
 
 		function(val, depth) -- Modulo
 			local lhs, rhs = generateModuloExpression(val)
-			if tonumber(tostring(lhs)) % tonumber(tostring(rhs)) ~= val then
+			if lhs % rhs ~= val then
 				return false
 			end
 			return Ast.ModExpression(
@@ -106,6 +106,10 @@ function NumbersToExpressions:init(_)
 end
 
 function NumbersToExpressions:CreateNumberExpression(val, depth)
+	-- Arithmetic rewrites may change a zero's sign, even when == still holds.
+	if val == 0 or val ~= val or val == math.huge or val == -math.huge then
+		return Ast.NumberExpression(val)
+	end
 	if depth > 0 and math.random() >= self.InternalThreshold or depth > 15 then
 		local format = self.AllowedNumberRepresentations[math.random(1, #self.AllowedNumberRepresentations)]
 		if not self.NumberRepresentationMutation then
@@ -117,6 +121,9 @@ function NumbersToExpressions:CreateNumberExpression(val, depth)
 				return Ast.NumberExpression(val)
 			end
 			local hexStr = string.format("0x%X", val)
+			if tonumber(hexStr) ~= val then
+				return Ast.NumberExpression(val)
+			end
 			local result = ""
 			for i = 1, #hexStr do
 				local c = hexStr:sub(i, i)
@@ -151,9 +158,7 @@ function NumbersToExpressions:CreateNumberExpression(val, depth)
 				return Ast.NumberExpression(val)
 			end
 
-			local exp = math.floor(math.log10(math.abs(val)))
-			local mantissa = val / (10 ^ exp)
-			return Ast.NumberExpression(string.format("%.15ge%d", mantissa, exp))
+			return Ast.NumberExpression(string.format("%.17e", val))
 		end
 
 		if format == "normal" then

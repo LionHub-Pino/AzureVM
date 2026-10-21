@@ -407,7 +407,17 @@ function Unparser:unparseExpression(expression, tabbing)
 	end
 
 	if(expression.kind == AstKind.NumberExpression) then
-		local str = tostring(expression.value);
+		local value = expression.value;
+		if(type(value) == "number" and value ~= value) then
+			return "(0/0)";
+		end
+		if(type(value) == "number" and value == 0 and 1/value < 0) then
+			-- A runtime division avoids Lua 5.1 merging -0 with an earlier +0 constant.
+			return "(-1/(1/0))";
+		end
+		-- tostring uses too few digits to round-trip arbitrary IEEE754 doubles.
+		-- Keep explicit string representations supplied by transform steps.
+		local str = type(value) == "number" and string.format("%.17g", value) or tostring(value);
 		if(str == "inf") then
 			return "2e1024"
 		end
@@ -544,6 +554,10 @@ function Unparser:unparseExpression(expression, tabbing)
 
 	k = AstKind.NegateExpression;
 	if(expression.kind == k) then
+		if(expression.rhs.kind == AstKind.NumberExpression and
+			type(expression.rhs.value) == "number" and expression.rhs.value == 0) then
+			return 1/expression.rhs.value > 0 and "(-1/(1/0))" or "0";
+		end
 		local rhs = self:unparseExpression(expression.rhs, tabbing);
 		if(Ast.astKindExpressionToNumber(expression.rhs.kind) >= Ast.astKindExpressionToNumber(k)) then
 			rhs = "(" .. rhs .. ")";
