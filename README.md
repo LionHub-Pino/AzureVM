@@ -100,6 +100,11 @@ These changes have **not** been benchmarked against Luraph and do not establish 
 ### Prerequisites
 - **Lua 5.1** for compilation. The bytecode reader expects Lua 5.1 chunks; LuaJIT bytecode is not a supported compiler input.
 
+### Tests and benchmarks
+Run the Lua 5.1 regression suite with `bash tests/verify-vm.sh Luraph`, plus the focused checks shown above. `lua5.1 benchmark.lua 5` runs five measured samples per microbenchmark after a warm-up and prints median/min/max CPU time. Benchmarks are informational: compare results on the same machine and Lua build; CI timings are not performance guarantees.
+
+GitHub Actions runs syntax checks, regression tests, VM semantic comparisons, and the informational benchmark on pushes and pull requests. Pushing tag `v1.0.0` triggers creation of the GitHub Release from `CHANGELOG.md`.
+
 ### CLI Syntax
 ```bash
 lua azure_obf.lua <input.lua> [options]
