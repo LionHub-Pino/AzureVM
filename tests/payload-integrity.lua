@@ -6,8 +6,9 @@ local output = AzureVM.compile("return 500500", { Seed = 12345, LuraphVersion = 
 local run = assert(loadstring(output))
 assert(run() == 500500, "untampered output changed behavior")
 
-local start = assert(output:find("LPH>", 1, true), "payload marker missing") + 4
-local stop = assert(output:find("]=]", start, true), "payload end missing")
+local _, opening_end, equals = output:find("%[(=*)%[LPH>")
+local start = assert(opening_end, "payload marker missing") + 1
+local stop = assert(output:find("]" .. equals .. "]", start, true), "payload end missing")
 local prefix, blob, suffix = output:sub(1, start - 1), output:sub(start, stop - 1), output:sub(stop)
 assert(#blob > 10, "payload is empty")
 local first = blob:sub(1, 1)

@@ -41,10 +41,6 @@ local function w32(n)
     return string.char(n%256, math.floor(n/256)%256, math.floor(n/65536)%256, math.floor(n/16777216)%256)
 end
 
-local function w16(n)
-    return string.char(n%256, math.floor(n/256)%256)
-end
-
 local function w64_double(v)
     -- Decimal bytes are portable to Lua 5.1; hexadecimal escapes are not.
     if v ~= v then return string.char(0, 0, 0, 0, 0, 0, 248, 127) end
@@ -89,7 +85,7 @@ end
 --     t=0: no extra data
 --     t=1: [1B value]
 --     t=3: [8B double]
---     t=4: [2B len][len bytes]
+--     t=4: [4B len][4B nonce][len bytes]
 --   [4B num_ps][child nodes...]
 local function serialize_binary(node)
     local out = {}
@@ -135,7 +131,9 @@ local function serialize_binary(node)
         elseif c.t == 4 then
             out[#out+1] = "\4"
             local bv = c.v
-            out[#out+1] = w16(#bv)
+            assert(#bv <= 4294967295, "String constant exceeds 32-bit payload length")
+            out[#out+1] = w32(#bv)
+            out[#out+1] = w32(c.nonce)
             for _, b in ipairs(bv) do out[#out+1] = string.char(b) end
         end
     end
@@ -237,22 +235,28 @@ function Encoder.new(seed)
     self.l_add  = 1013904223
     self.l_mod  = 17179869184  -- 2^34
     self.str_key  = math.random(13, 241)
+    self.used_string_nonces = {}
     self.blob_key = (seed % 251) + 3
     return self
 end
 
 -- =====================================================================
--- String constant encryption (rolling key)
+-- Per-constant reversible encoding with unique nonces and ciphertext feedback.
+-- This diversifies identical literals; it is not cryptographic encryption.
 -- =====================================================================
 function Encoder:encrypt_string(str)
+    local nonce
+    repeat nonce = math.random(1, 2147483646) until not self.used_string_nonces[nonce]
+    self.used_string_nonces[nonce] = true
     local bytes = {}
-    local k = self.str_key
+    local state = (self.str_key + nonce) % 2147483647
     for i = 1, #str do
         local b = str:byte(i)
-        bytes[i] = (b + k + i) % 256
-        k = (k * 7 + 13) % 256
+        local enc = (b + state % 256 + i) % 256
+        bytes[i] = enc
+        state = (state * 48271 + enc + i) % 2147483647
     end
-    return bytes
+    return bytes, nonce
 end
 
 -- =====================================================================
@@ -286,7 +290,8 @@ function Encoder:encode_prototype(proto)
         if type(ci) == "number" and ci > max_ci then max_ci = ci end
         local ct = c.type
         if ct == 4 then
-            encoded.ks[ci] = { t = 4, v = self:encrypt_string(c.value), rl = #c.value }
+            local bytes, nonce = self:encrypt_string(c.value)
+            encoded.ks[ci] = { t = 4, v = bytes, nonce = nonce, rl = #c.value }
         elseif ct == 3 then
             encoded.ks[ci] = { t = 3, v = c.value }
         elseif ct == 1 then
@@ -300,7 +305,8 @@ function Encoder:encode_prototype(proto)
     local nc = max_ci + 1
     for _, decoy in ipairs(DECOY_STRINGS) do
         if math.random(1, 3) == 1 then
-            encoded.ks[nc] = { t = 4, v = self:encrypt_string(decoy), rl = #decoy }
+            local bytes, nonce = self:encrypt_string(decoy)
+            encoded.ks[nc] = { t = 4, v = bytes, nonce = nonce, rl = #decoy }
             nc = nc + 1
         end
     end

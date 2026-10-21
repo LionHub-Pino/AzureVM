@@ -18,7 +18,8 @@ local function make_name_gen(seed)
         ["op"]=true,["w"]=true,["i"]=true,["x"]=true,["r"]=true,["q"]=true,["u"]=true,
         ["env"]=true,["upvals"]=true,["pr"]=true,["_a"]=true,["_b"]=true,["_c"]=true,
         ["_bx"]=true,["_sbx"]=true,["j"]=true,["P"]=true,["d"]=true,["I"]=true,
-        ["f"]=true,["O"]=true,["k"]=true,["J"]=true,["X"]=true,["A"]=true,["e"]=true,["N"]=true,["v"]=true
+        ["f"]=true,["O"]=true,["k"]=true,["J"]=true,["X"]=true,["A"]=true,["e"]=true,["N"]=true,["v"]=true,
+        ["state"]=true,["nonce"]=true
     }
     return function()
         local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -51,7 +52,6 @@ local _LPH_CHUNK_EXTRACT=function(x)local j_r,d_s="",#x;for I_i=1,d_s,7997 do lo
 local __BYTE,__CHAR,__SUB,__GSUB,__FLOOR=j,d,P,I,math.floor
 local __TUNPACK,__TPACK=e,table.pack or function(...)return{n=select('#',...),...}end
 local function __R32(s,i) local a,b,c2,d2=j(s,i,i+3) return a+b*256+c2*65536+d2*16777216 end
-local function __R16(s,i) local a,b=j(s,i,i+1) return a+b*256 end
 local function __R64(s,i)
 local b={} for x=0,7 do b[x+1]=j(s,i+x) end
 local sign=(b[8]>=128)and -1 or 1
@@ -97,12 +97,13 @@ if t==0 then proto.ks[i]=nil
 elseif t==1 then proto.ks[i]=j(bin,pos)~=0 pos=pos+1
 elseif t==3 then proto.ks[i]=__R64(bin,pos) pos=pos+8
 elseif t==4 then
-local l=__R16(bin,pos) pos=pos+2
+local l=__R32(bin,pos) pos=pos+4
+local nonce=__R32(bin,pos) pos=pos+4
 local s2=P(bin,pos,pos+l-1) pos=pos+l
-local C={} local k=__STR_KEY
+local C={} local state=(__STR_KEY+nonce)%2147483647
 for x=1,#s2 do
-local b=j(s2,x) local dec=(b-k-x)%256
-C[x]=v[dec<0 and dec+256 or dec] k=(k*7+13)%256
+local b=j(s2,x) local dec=(b-state%256-x)%256
+C[x]=v[dec] state=(state*48271+b+x)%2147483647
 end
 proto.ks[i]=table.concat(C)
 end
@@ -379,7 +380,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
     local V = {}
     local var_keys = {
         "byte","char","sub","gsub","floor","unpack","pack",
-        "r32","r16","r64","decode","readp","str_key","payload","pad_v","bkey",
+        "r32","r64","decode","readp","str_key","payload","pad_v","bkey",
         "bin_v","ast_v","wrap","exec","reg","vargs","openuvs","stop","ipc",
         "vlen","instr","konst","protos","rk","layout","closeuv","kseed","klm","kla","kmod",
         "disp","ctr","genv","loader","parse","poison","preve","pom","poa"
@@ -407,7 +408,6 @@ function Generator.emit(encoded_root, encoder_instance, options)
     decoder = decoder:gsub("__TUNPACK",  function() return V.unpack end)
     decoder = decoder:gsub("__TPACK",    function() return V.pack end)
     decoder = decoder:gsub("__R32",     function() return V.r32 end)
-    decoder = decoder:gsub("__R16",     function() return V.r16 end)
     decoder = decoder:gsub("__R64",     function() return V.r64 end)
     decoder = decoder:gsub("__DECODE",  function() return V.decode end)
     decoder = decoder:gsub("__READP",   function() return V.readp end)
