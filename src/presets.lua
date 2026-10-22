@@ -214,6 +214,81 @@ local presets = {
 			{ Name = "SafeRetryWrapper", Settings = { RetryCount = 3 } },
 		},
 	},
+	-- =====================================================================
+	-- Fast: Maximum execution speed, zero AST bloat, minimal VM overhead
+	-- Ideal for performance-critical loops and latency-sensitive game logic.
+	-- =====================================================================
+	["Fast"] = {
+		LuaVersion = "Lua51",
+		VarNamePrefix = "",
+		NameGenerator = "MangledShuffled",
+		PrettyPrint = false,
+		Seed = 0,
+		Steps = {
+			{ Name = "AzureVM", Settings = { LuraphVersion = 14, DecoyDensity = 0.2 } },
+		},
+	},
+
+	-- =====================================================================
+	-- Balanced: Optimal balance of protection, size, and runtime execution speed
+	-- Recommended for production scripts, general bots, and UI scripts.
+	-- =====================================================================
+	["Balanced"] = {
+		LuaVersion = "Lua51",
+		VarNamePrefix = "",
+		NameGenerator = "MangledShuffled",
+		PrettyPrint = false,
+		Seed = 0,
+		Steps = {
+			{ Name = "SplitStrings", Settings = {} },
+			{ Name = "EncryptStrings", Settings = {} },
+			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
+			{ Name = "AzureVM", Settings = { LuraphVersion = 14, DecoyDensity = 1.0 } },
+		},
+	},
+
+	-- =====================================================================
+	-- Hardened: Multi-layer protection (Deep-CFF + MBA + VM15 + Integrity Checks)
+	-- Built for high-threat environments and security-critical modules.
+	-- =====================================================================
+	["Hardened"] = {
+		LuaVersion = "Lua51",
+		VarNamePrefix = "",
+		NameGenerator = "MangledShuffled",
+		PrettyPrint = false,
+		Seed = 0,
+		Steps = {
+			{ Name = "MixedBooleanArithmetic", Settings = { Threshold = 0.7, MaxTransforms = 32 } },
+			{ Name = "OpaquePredicates", Settings = { Threshold = 0.5, MaxPerBlock = 2 } },
+			{ Name = "DeepControlFlowFlattening", Settings = { Threshold = 1.0, MinStatements = 3, ShuffleStates = true, OpaqueDispatch = true, MaxStates = 128 } },
+			{ Name = "SplitStrings", Settings = {} },
+			{ Name = "EncryptStrings", Settings = {} },
+			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
+			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.5, RuntimeChecks = true, InitializationRetries = 2 } },
+			{ Name = "SafeRetryWrapper", Settings = { RetryCount = 3 } },
+		},
+	},
+
+	-- =====================================================================
+	-- Research: Specialized profile for reverse engineering analysis and metrics
+	-- Uses deterministic features, telemetry metadata, and full AST instrumentation.
+	-- =====================================================================
+	["Research"] = {
+		LuaVersion = "Lua51",
+		VarNamePrefix = "",
+		NameGenerator = "MangledShuffled",
+		PrettyPrint = false,
+		Seed = 12345,
+		Steps = {
+			{ Name = "MixedBooleanArithmetic", Settings = { Threshold = 0.5, MaxTransforms = 16 } },
+			{ Name = "OpaquePredicates", Settings = { Threshold = 0.3, MaxPerBlock = 1 } },
+			{ Name = "SplitStrings", Settings = {} },
+			{ Name = "EncryptStrings", Settings = {} },
+			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
+			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.0, RuntimeChecks = true, InitializationRetries = 1 } },
+		},
+	},
+
 }
 -- Standard and diversified aliases
 presets["Clean"] = presets["Minify"]

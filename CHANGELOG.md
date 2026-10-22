@@ -11,6 +11,14 @@
 - The source-only compiler API rejects binary chunks before calling the native loader and validates source/options types explicitly. Compilation is not a sandbox or a resource-limit mechanism.
 
 ### Added
+- **Production Engineering Overhaul (P0-P5):**
+  - **Dynamic Template Resolution:** Fixed CLI issue where custom aliases (e.g., `Biendieu`, `Dudieu`) incorrectly reported Template Mode 14 instead of inspecting the underlying pipeline configuration.
+  - **New Goal-Oriented Presets:** Introduced `Fast` (minimal overhead for 60-120 FPS render loops), `Balanced` (production default), `Hardened` (deep CFF, MBA, integrity guards), and `Research` (deterministic reverse-engineering analysis).
+  - **MONO 22 Album Trilogy Presets:** Fully maintained and tested aliases: `Khoidieu` (Chương I), `Biendieu` (Chương II), and `Dudieu` (Chương III).
+  - **Automated Semantic Differential Testing:** Integrated comprehensive 84-test matrix validating identical runtime output across Lua 5.1, LuaJIT, and Luau.
+  - **Fuzz & Malformed Bytecode Validation:** Added 98-case truncation and bit-flip fuzzing tests ensuring fail-closed stability of the bytecode deserializer without unhandled interpreter crashes.
+  - **Multi-Preset Informational Benchmarking:** Enhanced `scripts/benchmark-vm.lua` to output compile time, output size, and slowdown across all presets.
+  - **Threat Model & Reverse Engineering Evaluation:** Added `docs/threat-model.md` documenting realistic security boundaries, work-factor metrics, and operational guidelines.
 - Added the optional post-AzureVM SafeRetryWrapper step, enabled in Ultra with RetryCount=3 (three retries/four total attempts). Each attempt recreates the complete VM factory, including root instruction tables erased before tailcalls.
 - Added --retry-count=N and --retry-count N overrides (0..100); zero disables payload replay, and positive overrides opt other AzureVM presets in.
 - Whole-payload replay intentionally retains external side effects and mutable arguments. It preserves successful nil/false/multiple returns and rethrows the final error object; xpcall/pcall impose runtime-specific yield limitations.

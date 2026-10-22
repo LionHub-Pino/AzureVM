@@ -43,33 +43,42 @@ local function median(values)
     if #values % 2 == 1 then return values[middle] end
     return (values[middle - 1] + values[middle]) / 2
 end
-print("runtime,workload,seed,samples,source_bytes,vm_bytes,compile_cpu_s,native_median_cpu_s,vm_median_cpu_s,slowdown")
-for _, fixture in ipairs(fixtures) do
-    local native = assert(loadstring(fixture.source, "@benchmark_native"))
-    local expected = native()
-    for _, seed in ipairs({12345, 67890}) do
-        collectgarbage("collect")
-        local started = os.clock()
-        local output = AzureVM.compile(fixture.source, { Seed = seed, LuraphVersion = 14 })
-        local compile_time = os.clock() - started
-        local vm = assert(loadstring(output, "@benchmark_vm"))
-        measure(native, expected) -- warm both paths before sampling
-        measure(vm, expected)
-        local native_times, vm_times = {}, {}
-        for i = 1, samples do
-            -- Alternate order to reduce systematic warm-up/order bias.
-            if i % 2 == 1 then
-                native_times[i] = measure(native, expected)
-                vm_times[i] = measure(vm, expected)
-            else
-                vm_times[i] = measure(vm, expected)
-                native_times[i] = measure(native, expected)
+
+local presets_to_benchmark = {
+    { name = "Fast", options = { LuraphVersion = 14, DecoyDensity = 0.2 } },
+    { name = "Balanced", options = { LuraphVersion = 14, DecoyDensity = 1.0 } },
+    { name = "Khoidieu", options = { LuraphVersion = 14, DecoyDensity = 1.5 } },
+    { name = "Biendieu", options = { LuraphVersion = 15, DecoyDensity = 1.5 } },
+}
+print("runtime,preset,workload,seed,samples,source_bytes,vm_bytes,compile_cpu_s,native_median_cpu_s,vm_median_cpu_s,slowdown")
+for _, pinfo in ipairs(presets_to_benchmark) do
+    for _, fixture in ipairs(fixtures) do
+        local native = assert(loadstring(fixture.source, "@benchmark_native"))
+        local expected = native()
+        for _, seed in ipairs({12345, 67890}) do
+            collectgarbage("collect")
+            local started = os.clock()
+            local opts = { Seed = seed, LuraphVersion = pinfo.options.LuraphVersion, DecoyDensity = pinfo.options.DecoyDensity }
+            local output = AzureVM.compile(fixture.source, opts)
+            local compile_time = os.clock() - started
+            local vm = assert(loadstring(output, "@benchmark_vm"))
+            measure(native, expected) -- warm both paths before sampling
+            measure(vm, expected)
+            local native_times, vm_times = {}, {}
+            for i = 1, samples do
+                if i % 2 == 1 then
+                    native_times[i] = measure(native, expected)
+                    vm_times[i] = measure(vm, expected)
+                else
+                    vm_times[i] = measure(vm, expected)
+                    native_times[i] = measure(native, expected)
+                end
             end
+            local native_time, vm_time = median(native_times), median(vm_times)
+            local ratio = native_time > 0 and string.format("%.3f", vm_time / native_time) or "NA"
+            print(string.format("%s,%s,%s,%d,%d,%d,%d,%.6f,%.6f,%.6f,%s",
+                _VERSION, pinfo.name, fixture.name, seed, samples, #fixture.source, #output,
+                compile_time, native_time, vm_time, ratio))
         end
-        local native_time, vm_time = median(native_times), median(vm_times)
-        local ratio = native_time > 0 and string.format("%.3f", vm_time / native_time) or "NA"
-        print(string.format("%s,%s,%d,%d,%d,%d,%.6f,%.6f,%.6f,%s",
-            _VERSION, fixture.name, seed, samples, #fixture.source, #output,
-            compile_time, native_time, vm_time, ratio))
     end
 end

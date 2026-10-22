@@ -78,17 +78,20 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 
 ## 📊 Protection Profiles (Presets)
 
-| Preset | Additional transforms before AzureVM | Decoy density | Friendly / Album Aliases |
-| :--- | :--- | :---: | :--- |
-| **`Clean`** / `Minify` | None (Minifier only) | — | `Lite` |
-| **`Life`** / `Weak` | Constant Array (Threshold 1), Function Wrap | — | `Basic` |
-| **`Standard`** / `Medium` | Encrypt Strings, Numbers to Expressions, Constant Array | — | `Balanced` |
-| **`Solid`** / `Strong` | Double VM layer, String Encryption, Mutated Math | — | `Shield` |
-| **`Luraph`** | Baseline AzureVM virtualization mode 14 | 1.0 | `Classic` |
-| **`Luraph14`** | AST Pre-Mutation + VM mode 14 | 1.0 | `Stealth` |
-| **`AzureGod`** | AST Pre-Mutation + Decoys 1.5x + VM mode 14 | 1.5 | 🎵 **`Khoidieu`** *(Chương 1 MONO)* |
-| **`AzureGod15`** / `Luraph15` | AST Pre-Mutation + Decoys 1.5x + VM mode 15 | 1.5 | 🎵 **`Biendieu`** *(Chương 2 MONO)*, `Hardcore`, `Armor` |
-| **`AzureGodUltra`** | Full Deep-CFF, Opaque Predicates, MBA 32-bit, Guards, SafeRetry | 1.5 | 🎵 **`Dudieu`** *(Chương 3 MONO)*, `Immortal`, `HardcoreUltra` |
+| Preset | Additional transforms before AzureVM | Decoy density | Friendly / Album Aliases | Target Workload |
+| :--- | :--- | :---: | :--- | :--- |
+| **`Fast`** | None (Minimal VM overhead) | 0.2 | — | High FPS Render Loops, 60–120 FPS games |
+| **`Balanced`** | Encrypt Strings, NumbersToExpressions, Constant Array | 1.0 | `Standard` | Recommended general production default |
+| **`Hardened`** | Full Deep-CFF, MBA 32-bit, Opaque Predicates, Guards, SafeRetry | 1.5 | `HardcoreUltra` | Sensitive logic, licensing, auth modules |
+| **`Research`** | MBA, Opaque Predicates, String Encrypt, NumbersToExpr, Telemetry | 1.0 | — | Reverse engineering evaluation & AST metrics |
+| **`Clean`** / `Minify` | None (Minifier only) | — | `Lite` | Code size reduction |
+| **`Life`** / `Weak` | Constant Array (Threshold 1), Function Wrap | — | `Basic` | Basic daily script protection |
+| **`Solid`** / `Strong` | Double VM layer, String Encryption, Mutated Math | — | `Shield` | Heavy layered protection |
+| **`Luraph`** | Baseline AzureVM virtualization mode 14 | 1.0 | `Classic` | Baseline compatibility |
+| **`Luraph14`** | AST Pre-Mutation + VM mode 14 | 1.0 | `Stealth` | AST pre-mutation mode 14 |
+| **`AzureGod`** | AST Pre-Mutation + Decoys 1.5x + VM mode 14 | 1.5 | 🎵 **`Khoidieu`** *(Chương 1 MONO)* | Enhanced decoys mode 14 |
+| **`AzureGod15`** / `Luraph15` | AST Pre-Mutation + Decoys 1.5x + VM mode 15 | 1.5 | 🎵 **`Biendieu`** *(Chương 2 MONO)*, `Hardcore`, `Armor` | Enhanced decoys mode 15 + checks |
+| **`AzureGodUltra`** | Full Deep-CFF, Opaque Predicates, MBA 32-bit, Guards, SafeRetry | 1.5 | 🎵 **`Dudieu`** *(Chương 3 MONO)*, `Immortal` | Maximum hardening profile |
 
 The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine version. More transforms can increase output size and runtime cost; the table is not a security ranking.
 

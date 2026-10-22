@@ -45,6 +45,10 @@ local function print_help()
     print("                           Khoidieu      : Chương 1 MONO (AST transforms, 1.5x decoys)")
     print("                           Biendieu      : Chương 2 MONO (Template mode 15, high hardening)")
     print("                           Dudieu        : Chương 3 MONO (Deep CFF, MBA, Guards, Retry)")
+    print("                           Fast          : Zero bloat, minimal VM overhead (high FPS)")
+    print("                           Balanced      : Optimized protection and execution efficiency")
+    print("                           Hardened      : Multi-layer CFF, MBA, VM15, Integrity Guards")
+    print("                           Research      : AST metrics & deobfuscation analysis profile")
     print("                           Hardcore      : Alias for AzureGod15")
     print("                           Life          : Alias for Weak")
     print("  --header <text>        Custom comment header (default: AzureVM template mode)")
@@ -188,7 +192,12 @@ f_in:close()
 print(BANNER)
 print(string.format("[*] Target Script : %s (%d bytes)", input_file, #source_code))
 print(string.format("[*] Preset        : %s", preset))
-local lph_ver = (preset:lower():find("15") or preset:lower():find("ultra")) and 15 or 14
+local lph_ver = 14
+for _, step in ipairs(pipeline_config.Steps or {}) do
+    if step.Name == "AzureVM" and step.Settings and step.Settings.LuraphVersion then
+        lph_ver = step.Settings.LuraphVersion
+    end
+end
 print(string.format("[*] Template Mode : AzureVM %d", lph_ver))
 print(string.format("[*] PRNG Seed     : %d", seed))
 print("")
