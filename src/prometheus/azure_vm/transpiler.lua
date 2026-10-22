@@ -1,7 +1,7 @@
 --[[
-    AzureVM - Luau to Lua 5.1 Preprocessor / Transpiler
-    Converts Luau-specific syntax to standard Lua 5.1 for full compilation fidelity.
-    v14.7 - Fixed: compound operators inside strings are no longer incorrectly transformed
+    AzureVM - limited Luau-to-Lua 5.1 text preprocessor.
+    This is not a full Luau parser or a compatibility guarantee. AzureVM.compile
+    tries native Lua 5.1 first so valid source does not pass through these rewrites.
 ]]
 
 local Transpiler = {}

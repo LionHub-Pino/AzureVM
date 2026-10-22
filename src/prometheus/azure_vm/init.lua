@@ -18,14 +18,33 @@ local Seed       = require("prometheus.azure_vm.seed")
 
 local AzureVM = {}
 
+local function load_source(text)
+    -- Lua 5.1's loader also accepts binary chunks. This API accepts source only.
+    if text:byte(1) == 27 then
+        error("[AzureVM] Binary chunks are not supported; provide Lua source text", 2)
+    end
+    return loadstring(text, "@chunk")
+end
+
 function AzureVM.compile(source_code, options)
+    if type(source_code) ~= "string" then
+        error("[AzureVM] Source must be a string", 2)
+    end
+    if options ~= nil and type(options) ~= "table" then
+        error("[AzureVM] Options must be a table", 2)
+    end
     options = options or {}
 
-    -- 1. Transpile Luau → Lua 5.1 with string-safe compound op expansion
-    local clean_code = Transpiler.transpile(source_code)
-
-    -- 2. Compile to bytecode
-    local chunk_fn, err = loadstring(clean_code, "@chunk")
+    -- Prefer native Lua 5.1 without rewriting literals, newlines, or comments.
+    local native_source = source_code
+    if native_source:sub(1, 2) == "#!" then
+        native_source = native_source:gsub("^#![^\r\n]*", "", 1)
+    end
+    local chunk_fn, err = load_source(native_source)
+    if not chunk_fn then
+        -- Limited Luau preprocessing is a fallback, not a full Luau compiler.
+        chunk_fn, err = load_source(Transpiler.transpile(native_source))
+    end
     if not chunk_fn then
         error("[AzureVM] Syntax error: " .. tostring(err))
     end
