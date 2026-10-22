@@ -51,6 +51,11 @@ AzureVMStep.SettingsDescriptor = {
         default = true,
         description = "Insert opaque predicates into VM dispatch loop"
     },
+    Compact = {
+        type = "boolean",
+        default = false,
+        description = "Emit a single physical line, including the comment header"
+    },
     Header = {
         type = "string",
         default = "",
@@ -87,6 +92,7 @@ function AzureVMStep:apply(ast, pipeline)
         DecoyDensity = self.DecoyDensity,
         OpaquePredicates = self.OpaquePredicates,
         Header = self.Header,
+        Compact = self.Compact,
     })
 
     pipeline.__azure_vm_result = vm_source

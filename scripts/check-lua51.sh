@@ -13,10 +13,14 @@ lua5.1 tests/regression/numeric-constants.lua
 lua5.1 tests/regression/numeric-hex-range.lua
 lua5.1 tests/regression/numeric-pipeline.lua
 lua5.1 tests/regression/string-constants.lua
+lua5.1 tests/regression/lazy-strings.lua
+lua5.1 tests/regression/register-mapping.lua
+lua5.1 tests/regression/compact-output.lua
 lua5.1 tests/regression/source-preservation.lua
 lua5.1 tests/regression/runtime-filenames.lua
 lua5.1 tests/regression/benchmark-statistics.lua
 bash tests/cli-validation.sh
+bash tests/compact-cli.sh
 bash tests/benchmark-validation.sh
 bash tests/harness-validation.sh
 if [ "$#" -eq 0 ]; then

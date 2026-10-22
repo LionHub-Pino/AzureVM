@@ -19,7 +19,7 @@ local function make_name_gen(seed)
         ["env"]=true,["upvals"]=true,["pr"]=true,["_a"]=true,["_b"]=true,["_c"]=true,
         ["_bx"]=true,["_sbx"]=true,["j"]=true,["P"]=true,["d"]=true,["I"]=true,
         ["f"]=true,["O"]=true,["k"]=true,["J"]=true,["X"]=true,["A"]=true,["e"]=true,["N"]=true,["v"]=true,
-        ["state"]=true,["nonce"]=true
+        ["state"]=true,["nonce"]=true,["strings"]=true,["entry"]=true,["index"]=true,["storage"]=true,["stride"]=true,["shift"]=true,["key"]=true,["value"]=true
     }
     return function()
         local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -85,6 +85,17 @@ local om=j(bin,pos) pos=pos+1
 local oa=j(bin,pos) pos=pos+1
 local lm=j(bin,pos) pos=pos+1
 local proto={np=np,up=up,ms=ms,iv=iv,om=om,oa=oa,lm=lm,ins={},ks={},ps={}}
+local strings={}
+O(proto.ks,{__index=function(_,index)
+local entry=strings[index]
+if not entry then return nil end
+local C={} local state=(__STR_KEY+entry[2])%2147483647
+for x=1,#entry[1] do
+local b=j(entry[1],x) local dec=(b-state%256-x)%256
+C[x]=v[dec] state=(state*48271+b+x)%2147483647
+end
+return table.concat(C)
+end})
 local ni=__R32(bin,pos) pos=pos+4
 for i=1,ni do
 local a,b,c2,d2,e2=j(bin,pos,pos+4) pos=pos+5
@@ -100,12 +111,7 @@ elseif t==4 then
 local l=__R32(bin,pos) pos=pos+4
 local nonce=__R32(bin,pos) pos=pos+4
 local s2=P(bin,pos,pos+l-1) pos=pos+l
-local C={} local state=(__STR_KEY+nonce)%2147483647
-for x=1,#s2 do
-local b=j(s2,x) local dec=(b-state%256-x)%256
-C[x]=v[dec] state=(state*48271+b+x)%2147483647
-end
-proto.ks[i]=table.concat(C)
+strings[i]={s2,nonce}
 end
 end
 local np2=__R32(bin,pos) pos=pos+4
@@ -131,7 +137,13 @@ local VM_ENGINE = [=[
 local __WRAP
 local __POISON = 0
 local function __EXEC(pr,env,upvals,...)
-local __REG,__VARGS,__OPENUVS,__STOP,__IPC=(table.create and table.create(pr.ms or 64)) or {},{...},{},0,1
+local __REG,__VARGS,__OPENUVS,__STOP,__IPC={},{...},{},0,1
+local storage={} local stride=pr.om*2+1
+local shift=(__VM_SEED+pr.oa*257)%4294967296
+O(__REG,{
+__index=function(_,key)return storage[(key*stride+shift)%4294967296]end,
+__newindex=function(_,key,value)storage[(key*stride+shift)%4294967296]=value end
+})
 local __VLEN=select('#',...)
 local __INSTR,__KONST,__PROTOS=pr.ins,pr.ks,pr.ps
 local __LAYOUT=pr.lm
@@ -623,7 +635,18 @@ local bx=b+c*512 return op,a,b,c,bx,bx-131071]],
     -- Keep the existing marker-bearing wrapper for output compatibility.
     local single_code_line = "return(function(...) " .. code_parts[1] .. " " .. inlined_markers .. " " .. table.concat(code_parts, " ", 2) .. " end)(...);"
 
-    local final_vm_line = lph_header .. "\n\n" .. single_code_line
+    local final_vm_line
+    if options.Compact then
+        -- Keep arbitrary header text inside a collision-safe long comment.
+        local text = lph_header:gsub("[\r\n]+", " ")
+        local equals = "="
+        while text:find("]" .. equals .. "]", 1, true) do
+            equals = equals .. "="
+        end
+        final_vm_line = "--[" .. equals .. "[" .. text .. "]" .. equals .. "] " .. single_code_line
+    else
+        final_vm_line = lph_header .. "\n\n" .. single_code_line
+    end
 
     return final_vm_line
 end

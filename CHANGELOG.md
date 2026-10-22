@@ -11,6 +11,10 @@
 - The source-only compiler API rejects binary chunks before calling the native loader and validates source/options types explicitly. Compilation is not a sandbox or a resource-limit mechanism.
 
 ### Added
+- Build/prototype-dependent register-address mapping through a proxy, preserving captured upvalues and nil/false values. Backing register values remain observable to the host.
+- On-demand string constant decoding without a persistent plaintext constant cache; repeated accesses have additional CPU/allocation cost.
+- `--compact` and API `Compact=true` emit a single physical line including a collision-safe comment header; no compression or universal executor compatibility is implied.
+- Focused tests for lazy string materialization, register mapping, compact CLI output, and adversarial multiline/delimiter header text.
 - Regression coverage for 10 native-source roundtrips, limited compound-assignment fallback, shebang handling, early binary-input rejection, 20 filename/template/seed contexts, and preservation of an installed host debug hook.
 - A literal-boundary semantic fixture runs through every advertised preset in CI.
 

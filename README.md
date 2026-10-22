@@ -51,6 +51,8 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 
 ### 1. Runtime and memory
 - Uses a byte lookup table during payload decoding.
+- Logical VM registers use a proxy over build/prototype-dependent affine storage addresses; captured upvalues continue to reference the same proxy. The backing values are not encrypted and remain inspectable by a host controlling the runtime.
+- String constants remain encoded until accessed and are decoded on each access without a persistent plaintext constant cache. Active values and host-managed string allocations remain observable; this is not secure memory erasure. Repeated access trades CPU and allocations for less eager plaintext materialization.
 - Clears the transient decoded payload buffer after materializing prototypes. Live VM state remains in memory while needed.
 - Load time, runtime overhead, memory use, and executor timeout behavior depend on the script and environment; no universal bounds are claimed.
 
@@ -67,7 +69,8 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 - **Numbers to Expressions:** Enabled in the non-default advanced presets.
 
 ### 4. Output format
-- Generates a single-line Lua wrapper after a header comment.
+- By default, generates a single-line Lua wrapper after a header comment.
+- `--compact` (or compiler API `Compact=true`) emits exactly one physical line, including a delimiter-safe comment header. This removes formatting only; it is not a compression algorithm.
 - The generated runtime is intended for Lua 5.1-compatible environments. LuaJIT and Luau behavior must be tested for the target environment.
 
 ---
@@ -200,3 +203,15 @@ Distributed under the **MIT License**.
 - **Azure VM Additions & Engine:** Copyright (c) 2026 **Azure**.
 
 > Development status and release cadence should be verified from the repository history.
+
+## Current hardening update: use and limits
+
+```sh
+lua5.1 azure_obf.lua input.lua --preset AzureGodUltra --compact --seed 12345 -o protected.lua
+bash scripts/check-lua51.sh  # tests also require Python 3 and GNU timeout
+lua5.1 scripts/benchmark-vm.lua 3
+```
+
+This update adds mapped register storage, on-demand string decoding, and a true single-line CLI/API output option. Existing opcode randomization, chained instruction encoding, payload checksum validation, and eligible-block CFF/opaque predicates remain in place. An integrity checksum detects accidental corruption; it is not authentication against an analyst who can modify the decoder and checksum together.
+
+It does **not** implement a new deep-CFF engine, MBA constant-hiding pass, universal anti-dump/anti-hook/anti-environment-spy protection, or a self-healing retry system. No claim of Luraph superiority or compatibility with all executors is made. Host debug hooks remain untouched. User code is not automatically retried: repeating a failed program can duplicate writes, purchases, or network requests. Lua 5.1 is the tested baseline; other runtimes require named-target tests.

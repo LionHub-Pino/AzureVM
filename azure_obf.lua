@@ -43,6 +43,7 @@ local function print_help()
     print("                           AzureGod15 : Same transforms, template mode 15")
     print("                           AzureGodUltra : Adds CFF and opaque predicates")
     print("  --header <text>        Custom comment header (default: AzureVM template mode)")
+    print("  --compact             Emit a single physical line, including header")
     print("  --seed <number>        Integer 1..2147483647 for deterministic compilation")
     print("  -v, --version          Show version info")
     print("  -h, --help             Show this help menu")
@@ -66,6 +67,7 @@ local output_file = nil
 local preset = "Luraph"
 local seed = require("prometheus.azure_vm.seed").random()
 local header_text = nil
+local compact = false
 
 local function fail(message)
     io.stderr:write("[-] Error: " .. message .. "\n")
@@ -95,6 +97,8 @@ while i <= #args do
     elseif arg == "--preset" then
         preset = option_value(i, arg)
         i = i + 1
+    elseif arg == "--compact" then
+        compact = true
     elseif arg == "--header" then
         header_text = option_value(i, arg)
         i = i + 1
@@ -158,11 +162,12 @@ local final_code
 -- For AzureGod: Apply AST mutation on raw source FIRST, then compile into VM
 print("[1/2] Loading Prometheus presets...")
 
-if header_text then
+if header_text or compact then
     for _, step in ipairs(pipeline_config.Steps or {}) do
         if step.Name == "AzureVM" then
             step.Settings = step.Settings or {}
-            step.Settings.Header = header_text
+            if header_text then step.Settings.Header = header_text end
+            if compact then step.Settings.Compact = true end
         end
     end
 end
