@@ -195,11 +195,6 @@ if J(debug)=="table" and debug.getinfo then
   local _info=debug.getinfo(1)
   if _info and _info.what and _info.what~="Lua" and _info.what~="main" and _info.what~="C" then __POISON = __POISON + 32 end
 end
-if J(debug)=="table" and debug.traceback then
-  local _tb=tostring(debug.traceback())
-  local _tbl=string.lower(_tb)
-  if string.find(_tbl,"hook") or string.find(_tbl,"spy") or string.find(_tbl,"deobf") or string.find(_tbl,"dump") or string.find(_tbl,"extractor") or string.find(_tbl,"disassembler") or string.find(_tbl,"tracer") or string.find(_tbl,"unluac") or string.find(_tbl,"luadec") then __POISON = __POISON + 128 end
-end
 if J(coroutine)=="table" and coroutine.wrap then
   local co=coroutine.wrap(function() return 0xCAFE end)
   if not co or co()~=0xCAFE then __POISON = __POISON + 256 end
@@ -216,11 +211,8 @@ return __EXEC(__AST,__GENV,{},...)
 
 -- =====================================================================
 -- AzureVM template mode 15 runtime checks.
--- Enhanced: pcall(debug.getinfo, 2, "f") call stack verification
--- Enhanced: debug.sethook neutralization + traceback hook detection
--- Enhanced: coroutine integrity check
--- Enhanced: environment fingerprint via getfenv
--- Enhanced: Roblox executor C-closure hook detection
+-- Additional library and environment sanity checks. Runtime verification must
+-- not depend on source filenames or disable the host's debugging hooks.
 -- =====================================================================
 local V15_CLOSE = [=[
 local __CTR=0
@@ -262,11 +254,6 @@ if J(debug)=="table" and debug.getinfo then
   if _info and _info.what and _info.what~="Lua" and _info.what~="main" and _info.what~="C" then __POISON = __POISON + 32 end
   local ok, res = pcall(debug.getinfo, 2, "f")
   if ok and res and res.func == __WRAP then __POISON = __POISON + 64 end
-end
-if J(debug)=="table" and debug.traceback then
-  local _tb = tostring(debug.traceback())
-  local _tbl = string.lower(_tb)
-  if string.find(_tbl, "hook") or string.find(_tbl, "spy") or string.find(_tbl, "dump") or string.find(_tbl, "deobf") or string.find(_tbl, "extractor") or string.find(_tbl, "disassembler") or string.find(_tbl, "tracer") or string.find(_tbl, "profiler") or string.find(_tbl, "unluac") or string.find(_tbl, "luadec") then __POISON = __POISON + 128 end
 end
 if J(coroutine)=="table" and coroutine.wrap then
   local co = coroutine.wrap(function() return 0xCAFE end)
