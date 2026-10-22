@@ -78,12 +78,17 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 
 ## 📊 Protection Profiles (Presets)
 
-| Preset | Additional transforms before AzureVM | Decoy density |
-| :--- | :--- | :---: |
-| **`Luraph`** | None | 1.0 |
-| **`Luraph14`**, **`Luraph15`** | Split strings, encrypt strings, numbers to expressions | 1.0 / 1.2 |
-| **`AzureGod`**, **`AzureGod15`** | Split strings, encrypt strings, numbers to expressions | 1.5 |
-| **`AzureGodUltra`** | Above, plus bounded deep-CFF, opaque predicates, MBA, guarded initialization recovery, and whole-payload retry | 1.5 |
+| Preset | Additional transforms before AzureVM | Decoy density | Friendly / Album Aliases |
+| :--- | :--- | :---: | :--- |
+| **`Clean`** / `Minify` | None (Minifier only) | — | `Lite` |
+| **`Life`** / `Weak` | Constant Array (Threshold 1), Function Wrap | — | `Basic` |
+| **`Standard`** / `Medium` | Encrypt Strings, Numbers to Expressions, Constant Array | — | `Balanced` |
+| **`Solid`** / `Strong` | Double VM layer, String Encryption, Mutated Math | — | `Shield` |
+| **`Luraph`** | Baseline AzureVM virtualization mode 14 | 1.0 | `Classic` |
+| **`Luraph14`** | AST Pre-Mutation + VM mode 14 | 1.0 | `Stealth` |
+| **`AzureGod`** | AST Pre-Mutation + Decoys 1.5x + VM mode 14 | 1.5 | 🎵 **`Khoidieu`** *(Chương 1 MONO)* |
+| **`AzureGod15`** / `Luraph15` | AST Pre-Mutation + Decoys 1.5x + VM mode 15 | 1.5 | 🎵 **`Biendieu`** *(Chương 2 MONO)*, `Hardcore`, `Armor` |
+| **`AzureGodUltra`** | Full Deep-CFF, Opaque Predicates, MBA 32-bit, Guards, SafeRetry | 1.5 | 🎵 **`Dudieu`** *(Chương 3 MONO)*, `Immortal`, `HardcoreUltra` |
 
 The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine version. More transforms can increase output size and runtime cost; the table is not a security ranking.
 
@@ -130,8 +135,12 @@ lua azure_obf.lua <input.lua> [options]
 ```text
   -o, --out <file>       Output destination (default: <input>_protected.lua)
   --preset <name>        Select protection preset (default: Luraph)
-                         Choices: Luraph, Luraph14, Luraph15, AzureGod, AzureGod15, AzureGodUltra
+                         Core choices: Luraph, Luraph14, Luraph15, AzureGod, AzureGod15, AzureGodUltra
+                         MONO Album:   Khoidieu (Ch.1), Biendieu (Ch.2), Dudieu (Ch.3)
+                         Diversified:  Clean, Life, Standard, Solid, Hardcore, Immortal
   --header <text>        Custom header comment in line 1
+  --compact              Emit a single physical line, including header
+  --retry-count <N>      Payload retries 0..100; also --retry-count=N (Ultra/Dudieu default: 3)
   --seed <number>        Integer 1..2147483647 for reproducible builds
   -v, --version          Display version information
   -h, --help             Display help menu
@@ -139,14 +148,21 @@ lua azure_obf.lua <input.lua> [options]
 
 ### Examples
 ```bash
-# Basic protection
-lua azure_obf.lua my_script.lua -o protected.lua
+# Basic daily protection (Life / Weak):
+lua5.1 azure_obf.lua my_script.lua --preset Life --compact -o protected.lua
 
-# Maximum protection with Control Flow Flattening & Opaque Predicates:
-lua azure_obf.lua game_logic.lua --preset AzureGodUltra -o game_protected.lua
+# MONO Album Chapter 1: Khoidieu (Khởi Điệu - AzureGod 1.5x decoys):
+lua5.1 azure_obf.lua script.lua --preset Khoidieu --compact -o khoidieu.lua
+
+# MONO Album Chapter 2: Biendieu (Biến Điệu - AzureGod15 Hardcore):
+lua5.1 azure_obf.lua game.lua --preset Biendieu --compact -o biendieu.lua
+
+# MONO Album Chapter 3: Dudieu (Đủ Điệu - AzureGodUltra Immortal):
+# Full Deep-CFF + MBA 32-bit + Opaque Predicates + SafeRetryWrapper (3 retries):
+lua5.1 azure_obf.lua game_logic.lua --preset Dudieu --compact --retry-count=3 -o dudieu.lua
 
 # Custom branding header:
-lua azure_obf.lua main.lua --preset AzureGod15 --header "Azure VM Security Engine" -o main_obf.lua
+lua5.1 azure_obf.lua main.lua --preset Hardcore --header "Azure VM Security Engine" --compact -o main_obf.lua
 ```
 
 ---
