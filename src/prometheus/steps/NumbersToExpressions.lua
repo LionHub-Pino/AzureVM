@@ -183,7 +183,9 @@ function NumbersToExpressions:apply(ast)
 		logger:warn("Warning: Binary representation is only supported in Lua 5.2 and above!")
 	end
 
-	visitast(ast, nil, function(node, _)
+	visitast(ast, function(node)
+		if node.__mba then return node, true end
+	end, function(node, _)
 		if node.kind == AstKind.NumberExpression then
 			if math.random() <= self.Threshold then
 				return self:CreateNumberExpression(node.value, 0)

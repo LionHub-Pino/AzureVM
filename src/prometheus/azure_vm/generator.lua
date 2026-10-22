@@ -1,3 +1,4 @@
+local Runtime = require("prometheus.azure_vm.runtime")
 local Generator = {}
 
 -- =====================================================================
@@ -19,7 +20,7 @@ local function make_name_gen(seed)
         ["env"]=true,["upvals"]=true,["pr"]=true,["_a"]=true,["_b"]=true,["_c"]=true,
         ["_bx"]=true,["_sbx"]=true,["j"]=true,["P"]=true,["d"]=true,["I"]=true,
         ["f"]=true,["O"]=true,["k"]=true,["J"]=true,["X"]=true,["A"]=true,["e"]=true,["N"]=true,["v"]=true,
-        ["state"]=true,["nonce"]=true,["strings"]=true,["entry"]=true,["index"]=true,["storage"]=true,["stride"]=true,["shift"]=true,["key"]=true,["value"]=true
+        ["state"]=true,["nonce"]=true,["strings"]=true,["entry"]=true,["index"]=true,["storage"]=true,["stride"]=true,["shift"]=true,["key"]=true,["value"]=true,["pcall"]=true
     }
     return function()
         local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -362,6 +363,8 @@ end
 -- =====================================================================
 function Generator.emit(encoded_root, encoder_instance, options)
     options = options or {}
+    local retries = Runtime.validate(options)
+    local protected_init = options.RuntimeChecks or retries > 0
     local op_map  = encoder_instance.opcode_map
     local lph_ver = options.LuraphVersion or 15
 
@@ -417,6 +420,9 @@ function Generator.emit(encoded_root, encoder_instance, options)
     decoder = decoder:gsub("__CHECKSUM", function() return tostring(checksum) end)
     decoder = decoder:gsub("__BIN",     function() return V.bin_v end)
     decoder = decoder:gsub("__AST",     function() return V.ast_v end)
+    if protected_init then
+        decoder = Runtime.wrap(decoder, {"O", "J", V.floor, V.pack, V.unpack, V.ast_v}, options)
+    end
     code_parts[#code_parts+1] = minify(decoder)
 
     -- Decode the layout selected for this prototype.
@@ -569,6 +575,12 @@ local bx=b+c*512 return op,a,b,c,bx,bx-131071]],
     local close_template = (lph_ver == 14) and V14_CLOSE or V15_CLOSE
 
     local close = close_template
+    if protected_init then
+        -- Replace brittle legacy C-function/English-error fingerprints with explicit canaries.
+        local first = assert(close:find("if _LPH_HOOK_GUARD then", 1, true))
+        local last = assert(close:find("local _LPH_LOAD =", first, true))
+        close = close:sub(1, first - 1) .. "_az_capscheck()\n" .. close:sub(last)
+    end
     close = close:gsub("__CTR",           function() return V.ctr end)
     close = close:gsub("__INSTR",         function() return V.instr end)
     close = close:gsub("__IPC",           function() return V.ipc end)

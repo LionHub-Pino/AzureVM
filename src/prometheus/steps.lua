@@ -17,5 +17,7 @@ return {
 	WatermarkCheck = require("prometheus.steps.WatermarkCheck"),
 	AzureVM = require("prometheus.steps.AzureVM"),
 	ControlFlowFlattening = require("prometheus.steps.ControlFlowFlattening"),
+	DeepControlFlowFlattening = require("prometheus.steps.DeepControlFlowFlattening"),
+	MixedBooleanArithmetic = require("prometheus.steps.MixedBooleanArithmetic"),
 	OpaquePredicates = require("prometheus.steps.OpaquePredicates"),
 }

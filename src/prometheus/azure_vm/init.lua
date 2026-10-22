@@ -64,6 +64,8 @@ function AzureVM.compile(source_code, options)
         DecoyDensity = options.DecoyDensity,
         OpaquePredicates = options.OpaquePredicates,
         Compact = options.Compact,
+        RuntimeChecks = options.RuntimeChecks,
+        InitializationRetries = options.InitializationRetries,
         Header = options.Header,
     })
 

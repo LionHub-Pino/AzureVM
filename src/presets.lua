@@ -204,12 +204,13 @@ return {
 		PrettyPrint = false,
 		Seed = 0,
 		Steps = {
+			{ Name = "MixedBooleanArithmetic", Settings = { Threshold = 0.7, MaxTransforms = 32 } },
 			{ Name = "OpaquePredicates", Settings = { Threshold = 0.5, MaxPerBlock = 2 } },
-			{ Name = "ControlFlowFlattening", Settings = { Threshold = 1.0, MinStatements = 3, ShuffleStates = true } },
+			{ Name = "DeepControlFlowFlattening", Settings = { Threshold = 1.0, MinStatements = 3, ShuffleStates = true, OpaqueDispatch = true, MaxStates = 128 } },
 			{ Name = "SplitStrings", Settings = {} },
 			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
-			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.5 } },
+			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.5, RuntimeChecks = true, InitializationRetries = 2 } },
 		},
 	},
 }

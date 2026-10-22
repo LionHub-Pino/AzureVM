@@ -11,6 +11,10 @@
 - The source-only compiler API rejects binary chunks before calling the native loader and validates source/options types explicitly. Compilation is not a sandbox or a resource-limit mechanism.
 
 ### Added
+- Ultra now uses bottom-up deep-CFF with conditional-edge lowering, state-dependent opaque dispatch predicates, bounded state counts, and binding-safe local alpha-renaming.
+- Added a budgeted, bit-library-free MBA AST pass for exact nonzero 32-bit integer constants; later arithmetic transforms preserve MBA subtrees.
+- Ultra enables fail-closed runtime primitive/library-identity checks and initialization-only recovery with xpcall/pcall/coroutine fallback, capped at two retries. User code, errors, return values, and yields are outside the retry region.
+- Added compact semantic harness mode, nested/shadowed-local fixtures, fault injection and integrity tests, and an optional installed-runtime matrix for Lua 5.1/LuaJIT/Luau CLI. These checks do not establish universal executor or anti-dump/anti-hook/anti-logger guarantees.
 - Build/prototype-dependent register-address mapping through a proxy, preserving captured upvalues and nil/false values. Backing register values remain observable to the host.
 - On-demand string constant decoding without a persistent plaintext constant cache; repeated accesses have additional CPU/allocation cost.
 - `--compact` and API `Compact=true` emit a single physical line including a collision-safe comment header; no compression or universal executor compatibility is implied.
@@ -20,6 +24,11 @@
 
 ### Compatibility
 - Syntax accepted by Lua 5.1 keeps Lua 5.1 string-escape semantics. Limited Luau preprocessing now runs only when native compilation fails; this is not automatic full Luau dialect detection. Explicit users of the text preprocessor still need target-specific compatibility tests.
+
+### Latest local verification
+- 133 semantic comparisons passed: 19 fixtures across all six presets, plus 19 additional Ultra compact checks.
+- Compact Ultra output matched the Lua 5.1 baseline for 19 fixtures on each installed Lua 5.1, LuaJIT, and Luau CLI (57 comparisons). This is a named-binary test result, not universal compatibility.
+- MBA boundaries/budgets, deep-CFF binding preservation, transient faults, terminal integrity failures, all three protection paths, user error objects/yields/side effects, and host debug hook preservation passed.
 
 ## [2.0.0] - 2026-10-22
 

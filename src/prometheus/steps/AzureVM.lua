@@ -51,6 +51,14 @@ AzureVMStep.SettingsDescriptor = {
         default = true,
         description = "Insert opaque predicates into VM dispatch loop"
     },
+    RuntimeChecks = {
+        type = "boolean", default = false,
+        description = "Fail-closed initialization capability and library-identity checks"
+    },
+    InitializationRetries = {
+        type = "number", default = 0, min = 0, max = 2,
+        description = "Maximum initialization-only retries; user code never retries"
+    },
     Compact = {
         type = "boolean",
         default = false,
@@ -93,6 +101,8 @@ function AzureVMStep:apply(ast, pipeline)
         OpaquePredicates = self.OpaquePredicates,
         Header = self.Header,
         Compact = self.Compact,
+        RuntimeChecks = self.RuntimeChecks,
+        InitializationRetries = self.InitializationRetries,
     })
 
     pipeline.__azure_vm_result = vm_source

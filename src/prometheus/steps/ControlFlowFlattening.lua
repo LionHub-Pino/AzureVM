@@ -286,4 +286,5 @@ function ControlFlowFlattening:apply(ast, pipeline)
 	return ast
 end
 
+ControlFlowFlattening.hasUnenclosedBreak = hasUnenclosedBreak
 return ControlFlowFlattening

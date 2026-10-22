@@ -63,10 +63,11 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 - **Per-string stream diversity:** Each string constant gets a unique build-local nonce and ciphertext feedback, so identical literals need not have identical encoded bytes. This is reversible obfuscation, not cryptographic encryption; plaintext values still exist after decoding.
 
 ### 3. 🛡️ Advanced AST Mutation Pipeline
-- **Control Flow Flattening (CFF):** Available in the `AzureGodUltra` preset for eligible statement blocks.
+- **Deep Control Flow Flattening (CFF):** `AzureGodUltra` processes eligible blocks bottom-up, lowers conditional edges into bounded dispatchers, preserves resolved local bindings through alpha-renaming, and uses state-dependent opaque predicates. Blocks with escaping breaks/continues or excessive state counts stay unchanged.
 - **Opaque Predicates:** Available in the `AzureGodUltra` preset.
 - **String transforms:** `SplitStrings` and `EncryptStrings` are enabled in the non-default advanced presets.
 - **Numbers to Expressions:** Enabled in the non-default advanced presets.
+- **MBA constants:** `AzureGodUltra` adds portable Boolean–Arithmetic identities for exact nonzero 32-bit integer constants. Fractional, nonfinite, out-of-range, and signed-zero values are not rewritten by MBA. Transform budgets bound code growth.
 
 ### 4. Output format
 - By default, generates a single-line Lua wrapper after a header comment.
@@ -82,7 +83,7 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 | **`Luraph`** | None | 1.0 |
 | **`Luraph14`**, **`Luraph15`** | Split strings, encrypt strings, numbers to expressions | 1.0 / 1.2 |
 | **`AzureGod`**, **`AzureGod15`** | Split strings, encrypt strings, numbers to expressions | 1.5 |
-| **`AzureGodUltra`** | Above, plus eligible-block CFF and opaque predicates | 1.5 |
+| **`AzureGodUltra`** | Above, plus bounded deep-CFF, opaque predicates, MBA, and guarded initialization recovery | 1.5 |
 
 The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine version. More transforms can increase output size and runtime cost; the table is not a security ranking.
 
@@ -214,4 +215,10 @@ lua5.1 scripts/benchmark-vm.lua 3
 
 This update adds mapped register storage, on-demand string decoding, and a true single-line CLI/API output option. Existing opcode randomization, chained instruction encoding, payload checksum validation, and eligible-block CFF/opaque predicates remain in place. An integrity checksum detects accidental corruption; it is not authentication against an analyst who can modify the decoder and checksum together.
 
-It does **not** implement a new deep-CFF engine, MBA constant-hiding pass, universal anti-dump/anti-hook/anti-environment-spy protection, or a self-healing retry system. No claim of Luraph superiority or compatibility with all executors is made. Host debug hooks remain untouched. User code is not automatically retried: repeating a failed program can duplicate writes, purchases, or network requests. Lua 5.1 is the tested baseline; other runtimes require named-target tests.
+`AzureGodUltra` now also enables deep-CFF, bounded MBA constant hiding, initialization capability/library-identity checks, and at most two initialization retries. Recovery selects xpcall, pcall, or a non-yielding coroutine fallback according to availability. Integrity failures are terminal. User code starts **after** recovery ends: errors, multiple return values, and coroutine yields propagate without replaying user side effects.
+
+These are not universal anti-dump/anti-hook/anti-environment-spy traps. Library identity changes during initialization and broken primitive canaries fail closed; preinstalled behaviorally equivalent hooks and environment loggers are not reliably detectable. Required functions are locally captured, transient buffers are cleared, and the encoded user payload is interpreted without requiring native dump/load/debug APIs. Live VM state and initial global lookups remain visible to a controlling host. Host debug hooks remain untouched.
+
+Compiler API options are `RuntimeChecks=true` and `InitializationRetries=0..2`; both default off/zero outside Ultra. The fallback is initialization-only, not a transaction/recovery system for user programs. `--compact` removes formatting; it does not compress or encrypt by itself.
+
+Run `python3 scripts/check-runtime-matrix.py` to compare compact Ultra output against the Lua 5.1 baseline on installed Lua 5.1, LuaJIT, and Luau CLI executables. Missing runtimes are reported as skipped; executable hashes identify the tested binaries. This is not certification of Roblox executors, complete Luau source-dialect support, all input programs, or Luraph superiority. See [the hardening contract](docs/ultra-hardening.md).

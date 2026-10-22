@@ -6,6 +6,15 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 preset="${1:-Luraph}"
 timeout="${VM_TEST_TIMEOUT:-30s}"
+extra_args=()
+compact=0
+if [ "${2:-}" = "--compact" ] && [ "$#" -le 2 ]; then
+    extra_args=(--compact)
+    compact=1
+elif [ "$#" -gt 1 ]; then
+    echo 'Usage: verify-vm.sh [preset] [--compact]' >&2
+    exit 1
+fi
 command -v timeout >/dev/null || { echo 'GNU timeout is required' >&2; exit 1; }
 passed=0
 failed=0
@@ -21,8 +30,14 @@ for source in "$repo"/tests/*.lua; do
     timeout "$timeout" lua5.1 "$source" >"$tmp/expected" 2>"$tmp/expected.err"
     expected_status=$?
     timeout "$timeout" lua5.1 "$repo/azure_obf.lua" "$source" --preset "$preset" --seed 12345 \
-        -o "$tmp/output.lua" >"$tmp/build.log" 2>&1
+        "${extra_args[@]}" -o "$tmp/output.lua" >"$tmp/build.log" 2>&1
     build_status=$?
+    if [ "$build_status" -eq 0 ] && [ "$compact" -eq 1 ]; then
+        if [ ! -s "$tmp/output.lua" ] || [ "$(wc -l < "$tmp/output.lua")" -ne 0 ] || LC_ALL=C grep -q $'\r' "$tmp/output.lua"; then
+            echo 'Compact output is empty or contains CR/LF' >>"$tmp/build.log"
+            build_status=98
+        fi
+    fi
     if [ "$build_status" -eq 0 ]; then
         timeout "$timeout" lua5.1 "$tmp/output.lua" >"$tmp/actual" 2>"$tmp/actual.err"
         actual_status=$?
