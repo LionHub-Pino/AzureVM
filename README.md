@@ -39,6 +39,8 @@
 
 **Azure VM** reads Lua 5.1 bytecode and emits a Lua-based interpreter with an encoded instruction payload. It also has a limited text preprocessor for some Luau syntax. Full Luau compatibility and Roblox executor compatibility have **not** been established by the repository's tests.
 
+The compiler API tries native Lua 5.1 first, without rewriting string literals or line breaks. Limited Luau preprocessing is attempted only if native compilation fails; code valid in both dialects keeps Lua 5.1 semantics. Source/options types are validated and binary chunk input is rejected before the native loader. Compilation is not a sandbox or a resource limit.
+
 Obfuscation can increase reverse-engineering effort, but it does not make code secret once it runs on a machine controlled by an analyst. The output contains the VM and its decoder; live values can be inspected or dumped. No claim of resistance to a particular deobfuscator is made without a reproducible test.
 
 Preset names containing **`Luraph`** are historical compatibility names for AzureVM configurations. This project is not Luraph, is not affiliated with Luraph, and has not been shown to match or exceed Luraph v15.
@@ -97,6 +99,7 @@ The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine
 - The runtime releases the transient decoded payload buffer after materializing prototypes. This reduces retained plaintext copies; it does not make live VM state undumpable.
 - New builds use 32-bit string lengths, rather than silently wrapping strings at 65,536 bytes. `lua5.1 tests/regression/string-constants.lua` checks binary strings, long strings, per-constant nonce diversity, ciphertext feedback, and fixed-seed reproducibility.
 - Numeric packing uses Lua 5.1's [`math.frexp`](https://www.lua.org/manual/5.1/manual.html#pdf-math.frexp) instead of logarithmic exponent estimation. Serializer and AST regressions cover extreme doubles, signed zero, and precision-sensitive literals: `lua5.1 tests/regression/numeric-constants.lua` and `lua5.1 tests/regression/numeric-pipeline.lua`.
+- Native-source preservation, limited preprocessing fallback, and binary-input rejection are checked with `lua5.1 tests/regression/source-preservation.lua`. Filename keywords no longer poison the runtime's decoding key; `lua5.1 tests/regression/runtime-filenames.lua` checks both templates and verifies an installed host debug hook remains active. Payload integrity checks are unchanged.
 
 The string payload format is internal. Existing generated files keep their embedded decoder; newly generated files embed the updated decoder. Fixed seeds are reproducible within the same implementation, not a guarantee of byte-identical output across upgrades.
 

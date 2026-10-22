@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Native Lua 5.1 source compiles before the limited Luau preprocessor is considered. Long-string blank lines, escaped line breaks, CRLF content, and literal backslash-u sequences are no longer rewritten by that preprocessing pass.
+- Shebang removal preserves the remaining source instead of collapsing its lines.
+- Runtime decoding no longer changes behavior because a source filename contains words such as `hook`, `dump`, or `profiler`. Payload integrity checks remain enabled and the host's debug hook is left intact.
+
+### Security
+- The source-only compiler API rejects binary chunks before calling the native loader and validates source/options types explicitly. Compilation is not a sandbox or a resource-limit mechanism.
+
+### Added
+- Regression coverage for 10 native-source roundtrips, limited compound-assignment fallback, shebang handling, early binary-input rejection, 20 filename/template/seed contexts, and preservation of an installed host debug hook.
+- A literal-boundary semantic fixture runs through every advertised preset in CI.
+
+### Compatibility
+- Syntax accepted by Lua 5.1 keeps Lua 5.1 string-escape semantics. Limited Luau preprocessing now runs only when native compilation fails; this is not automatic full Luau dialect detection. Explicit users of the text preprocessor still need target-specific compatibility tests.
+
 ## [2.0.0] - 2026-10-22
 
 This release includes a signed-zero behavior change; review the compatibility notes before upgrading from v1.0.0.
