@@ -21,10 +21,12 @@ lua5.1 tests/regression/compact-output.lua
 lua5.1 tests/regression/source-preservation.lua
 lua5.1 tests/regression/runtime-filenames.lua
 lua5.1 tests/regression/runtime-recovery.lua
+lua5.1 tests/regression/payload-retry.lua
 lua5.1 tests/regression/runtime-integrity.lua
 lua5.1 tests/regression/benchmark-statistics.lua
 bash tests/cli-validation.sh
 bash tests/compact-cli.sh
+bash tests/retry-cli.sh
 bash tests/benchmark-validation.sh
 bash tests/harness-validation.sh
 if [ "$#" -eq 0 ]; then

@@ -83,7 +83,7 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 | **`Luraph`** | None | 1.0 |
 | **`Luraph14`**, **`Luraph15`** | Split strings, encrypt strings, numbers to expressions | 1.0 / 1.2 |
 | **`AzureGod`**, **`AzureGod15`** | Split strings, encrypt strings, numbers to expressions | 1.5 |
-| **`AzureGodUltra`** | Above, plus bounded deep-CFF, opaque predicates, MBA, and guarded initialization recovery | 1.5 |
+| **`AzureGodUltra`** | Above, plus bounded deep-CFF, opaque predicates, MBA, guarded initialization recovery, and whole-payload retry | 1.5 |
 
 The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine version. More transforms can increase output size and runtime cost; the table is not a security ranking.
 
@@ -215,10 +215,31 @@ lua5.1 scripts/benchmark-vm.lua 3
 
 This update adds mapped register storage, on-demand string decoding, and a true single-line CLI/API output option. Existing opcode randomization, chained instruction encoding, payload checksum validation, and eligible-block CFF/opaque predicates remain in place. An integrity checksum detects accidental corruption; it is not authentication against an analyst who can modify the decoder and checksum together.
 
-`AzureGodUltra` now also enables deep-CFF, bounded MBA constant hiding, initialization capability/library-identity checks, and at most two initialization retries. Recovery selects xpcall, pcall, or a non-yielding coroutine fallback according to availability. Integrity failures are terminal. User code starts **after** recovery ends: errors, multiple return values, and coroutine yields propagate without replaying user side effects.
+`AzureGodUltra` now also enables deep-CFF, bounded MBA constant hiding, initialization capability/library-identity checks, and at most two initialization retries. Recovery selects xpcall, pcall, or a non-yielding coroutine fallback according to availability. Integrity failures are terminal. User code starts **after initialization recovery** ends. Ultra additionally enables the separate `SafeRetryWrapper` described below, which deliberately replays whole payloads after uncaught errors.
 
 These are not universal anti-dump/anti-hook/anti-environment-spy traps. Library identity changes during initialization and broken primitive canaries fail closed; preinstalled behaviorally equivalent hooks and environment loggers are not reliably detectable. Required functions are locally captured, transient buffers are cleared, and the encoded user payload is interpreted without requiring native dump/load/debug APIs. Live VM state and initial global lookups remain visible to a controlling host. Host debug hooks remain untouched.
 
 Compiler API options are `RuntimeChecks=true` and `InitializationRetries=0..2`; both default off/zero outside Ultra. The fallback is initialization-only, not a transaction/recovery system for user programs. `--compact` removes formatting; it does not compress or encrypt by itself.
 
 Run `python3 scripts/check-runtime-matrix.py` to compare compact Ultra output against the Lua 5.1 baseline on installed Lua 5.1, LuaJIT, and Luau CLI executables. Missing runtimes are reported as skipped; executable hashes identify the tested binaries. This is not certification of Roblox executors, complete Luau source-dialect support, all input programs, or Luraph superiority. See [the hardening contract](docs/ultra-hardening.md).
+
+## SafeRetryWrapper: stateless payload replay
+
+`SafeRetryWrapper` is an optional pipeline step **after AzureVM**, enabled by default in `AzureGodUltra` with `RetryCount=3`. Its name refers to bounded attempts and fresh VM state, **not side-effect safety**.
+
+```sh
+lua5.1 azure_obf.lua input.lua --preset AzureGodUltra --compact --retry-count=3 -o protected.lua
+lua5.1 azure_obf.lua input.lua --preset AzureGodUltra --compact --retry-count=0 -o no_payload_retry.lua
+```
+
+Both `--retry-count=N` and `--retry-count N` are accepted. The integer range is 0..100. **N means additional retries**: 3 permits at most 4 total attempts. Zero removes the wrapper entirely. A positive CLI override adds the step to other AzureVM presets; non-VM presets cannot enable it.
+
+Each failed attempt unwinds its protected call and runs the entire emitted decoder/VM factory again. Registers, VM stack, instruction tables (including root tailcall cleanup), prototype state, and upvalues are recreated. Original argument values are passed again; mutable argument objects are not cloned. Nil/false/multiple results are preserved on success, and the final error object is rethrown unchanged. xpcall is preferred, with pcall as the availability fallback.
+
+**External effects are deliberately retained and may repeat:** globals, writes, requests, counters, host mutations, and escaped closures are not rolled back. An escaped closure remains attached to its original attempt. The wrapper does not infer that a script is stateless.
+
+Every uncaught factory/dispatcher error is eligible for replay, including integrity rejection. Checks still reject corrupt payloads on every attempt; retries do not repair or bypass them. InitializationRetries applies independently inside each payload attempt. Native crashes, process termination, infinite loops, and non-catchable resource failures are not handled.
+
+Lua 5.1 protected calls introduce a yield boundary: a top-level payload yield through pcall/xpcall is not supported and may become a retried error. Disable whole-payload retry with `--retry-count=0` for scripts requiring that behavior. Ordinary coroutines entirely inside the payload remain covered by the semantic test suite.
+
+For custom pipeline configurations, append `{Name="SafeRetryWrapper", Settings={RetryCount=3}}` immediately after the AzureVM step. The direct compiler API still emits an unwrapped VM unless this pipeline step is used.

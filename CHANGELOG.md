@@ -11,9 +11,13 @@
 - The source-only compiler API rejects binary chunks before calling the native loader and validates source/options types explicitly. Compilation is not a sandbox or a resource-limit mechanism.
 
 ### Added
+- Added the optional post-AzureVM SafeRetryWrapper step, enabled in Ultra with RetryCount=3 (three retries/four total attempts). Each attempt recreates the complete VM factory, including root instruction tables erased before tailcalls.
+- Added --retry-count=N and --retry-count N overrides (0..100); zero disables payload replay, and positive overrides opt other AzureVM presets in.
+- Whole-payload replay intentionally retains external side effects and mutable arguments. It preserves successful nil/false/multiple returns and rethrows the final error object; xpcall/pcall impose runtime-specific yield limitations.
+- Added regression tests for factory reset, tailcall failures, attempt limits, irreversible side effects, tuple/error preservation, integrity rejection, step ordering, and compact CLI validation.
 - Ultra now uses bottom-up deep-CFF with conditional-edge lowering, state-dependent opaque dispatch predicates, bounded state counts, and binding-safe local alpha-renaming.
 - Added a budgeted, bit-library-free MBA AST pass for exact nonzero 32-bit integer constants; later arithmetic transforms preserve MBA subtrees.
-- Ultra enables fail-closed runtime primitive/library-identity checks and initialization-only recovery with xpcall/pcall/coroutine fallback, capped at two retries. User code, errors, return values, and yields are outside the retry region.
+- Ultra enables fail-closed runtime primitive/library-identity checks and initialization-only recovery with xpcall/pcall/coroutine fallback, capped at two retries. User code, errors, return values, and yields are outside the initialization retry region. SafeRetryWrapper adds a separate explicitly replaying payload layer.
 - Added compact semantic harness mode, nested/shadowed-local fixtures, fault injection and integrity tests, and an optional installed-runtime matrix for Lua 5.1/LuaJIT/Luau CLI. These checks do not establish universal executor or anti-dump/anti-hook/anti-logger guarantees.
 - Build/prototype-dependent register-address mapping through a proxy, preserving captured upvalues and nil/false values. Backing register values remain observable to the host.
 - On-demand string constant decoding without a persistent plaintext constant cache; repeated accesses have additional CPU/allocation cost.

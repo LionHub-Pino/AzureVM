@@ -5,7 +5,7 @@
 -- Predefined obfuscation presets for Prometheus + AzureVM
 -- AzureVM presets. Historical Luraph-named keys are compatibility labels.
 
-return {
+local presets = {
 	-- Minifies your code. Does not obfuscate it. No performance loss.
 	["Minify"] = {
 		LuaVersion = "Lua51",
@@ -211,6 +211,35 @@ return {
 			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.5, RuntimeChecks = true, InitializationRetries = 2 } },
+			{ Name = "SafeRetryWrapper", Settings = { RetryCount = 3 } },
 		},
 	},
 }
+-- Standard and diversified aliases
+presets["Clean"] = presets["Minify"]
+presets["Lite"] = presets["Minify"]
+presets["Basic"] = presets["Weak"]
+presets["Life"] = presets["Weak"]
+presets["Standard"] = presets["Medium"]
+presets["Balanced"] = presets["Medium"]
+presets["Solid"] = presets["Strong"]
+presets["Shield"] = presets["Strong"]
+presets["Classic"] = presets["Luraph"]
+presets["Stealth"] = presets["Luraph14"]
+presets["Hardcore"] = presets["AzureGod15"]
+presets["Armor"] = presets["AzureGod15"]
+presets["Immortal"] = presets["AzureGodUltra"]
+presets["HardcoreUltra"] = presets["AzureGodUltra"]
+
+-- MONO 22 Album 3 Chapters Aliases:
+-- Chương I: Khởi Đầu / Khởi Điệu (Khoidieu -> AzureGod)
+-- Chương II: Biến Đổi / Biến Điệu (Biendieu -> AzureGod15)
+-- Chương III: Kết Thúc / Đủ Điệu (Dudieu -> AzureGodUltra)
+presets["Khoidieu"] = presets["AzureGod"]
+presets["khoidieu"] = presets["AzureGod"]
+presets["Biendieu"] = presets["AzureGod15"]
+presets["biendieu"] = presets["AzureGod15"]
+presets["Dudieu"] = presets["AzureGodUltra"]
+presets["dudieu"] = presets["AzureGodUltra"]
+
+return presets

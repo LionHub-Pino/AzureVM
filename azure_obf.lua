@@ -39,11 +39,17 @@ local function print_help()
     print("                           Luraph     : AzureVM baseline (default; not Luraph)")
     print("                           Luraph14   : AzureVM with string and number transforms")
     print("                           Luraph15   : Same transforms, more decoy handlers")
-    print("                           AzureGod   : String and number transforms, 1.5x decoys")
-    print("                           AzureGod15 : Same transforms, template mode 15")
-    print("                           AzureGodUltra : Adds CFF and opaque predicates")
+    print("                           AzureGod   : String and number transforms, 1.5x decoys (alias: Khoidieu)")
+    print("                           AzureGod15 : Same transforms, template mode 15 (alias: Biendieu, Hardcore)")
+    print("                           AzureGodUltra : Deep CFF, MBA, guards and payload retry (alias: Dudieu, Immortal)")
+    print("                           Khoidieu      : Chương 1 MONO (AST transforms, 1.5x decoys)")
+    print("                           Biendieu      : Chương 2 MONO (Template mode 15, high hardening)")
+    print("                           Dudieu        : Chương 3 MONO (Deep CFF, MBA, Guards, Retry)")
+    print("                           Hardcore      : Alias for AzureGod15")
+    print("                           Life          : Alias for Weak")
     print("  --header <text>        Custom comment header (default: AzureVM template mode)")
     print("  --compact             Emit a single physical line, including header")
+    print("  --retry-count <N>     Payload retries 0..100; also --retry-count=N (Ultra: 3)")
     print("  --seed <number>        Integer 1..2147483647 for deterministic compilation")
     print("  -v, --version          Show version info")
     print("  -h, --help             Show this help menu")
@@ -68,6 +74,7 @@ local preset = "Luraph"
 local seed = require("prometheus.azure_vm.seed").random()
 local header_text = nil
 local compact = false
+local retry_count = nil
 
 local function fail(message)
     io.stderr:write("[-] Error: " .. message .. "\n")
@@ -80,6 +87,14 @@ local function option_value(index, option)
         fail("Missing value for " .. option)
     end
     return value
+end
+
+local function parse_retry_count(value)
+    local count = tonumber(value)
+    if not count or count < 0 or count > 100 or count % 1 ~= 0 then
+        fail("Retry count must be an integer between 0 and 100")
+    end
+    return count
 end
 
 local i = 1
@@ -99,6 +114,11 @@ while i <= #args do
         i = i + 1
     elseif arg == "--compact" then
         compact = true
+    elseif arg == "--retry-count" then
+        retry_count = parse_retry_count(option_value(i, arg))
+        i = i + 1
+    elseif arg:match("^%-%-retry%-count=") then
+        retry_count = parse_retry_count(arg:match("=(.*)$"))
     elseif arg == "--header" then
         header_text = option_value(i, arg)
         i = i + 1
@@ -121,6 +141,27 @@ local presets = require("presets")
 local pipeline_config = presets[preset]
 if not pipeline_config then
     fail("Unknown preset: " .. preset)
+end
+
+if retry_count ~= nil then
+    local found = false
+    for _, step in ipairs(pipeline_config.Steps or {}) do
+        if step.Name == "SafeRetryWrapper" then
+            step.Settings = step.Settings or {}
+            step.Settings.RetryCount = retry_count
+            found = true
+        end
+    end
+    if not found and retry_count > 0 then
+        local vm_index
+        for index, step in ipairs(pipeline_config.Steps or {}) do
+            if step.Name == "AzureVM" then vm_index = index end
+        end
+        if not vm_index then fail("--retry-count requires an AzureVM preset") end
+        table.insert(pipeline_config.Steps, vm_index + 1, {
+            Name = "SafeRetryWrapper", Settings = { RetryCount = retry_count }
+        })
+    end
 end
 
 if not input_file then

@@ -16,6 +16,7 @@ return {
 	AddVararg = require("prometheus.steps.AddVararg"),
 	WatermarkCheck = require("prometheus.steps.WatermarkCheck"),
 	AzureVM = require("prometheus.steps.AzureVM"),
+	SafeRetryWrapper = require("prometheus.steps.SafeRetryWrapper"),
 	ControlFlowFlattening = require("prometheus.steps.ControlFlowFlattening"),
 	DeepControlFlowFlattening = require("prometheus.steps.DeepControlFlowFlattening"),
 	MixedBooleanArithmetic = require("prometheus.steps.MixedBooleanArithmetic"),
