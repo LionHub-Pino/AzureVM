@@ -198,7 +198,7 @@ local presets = {
     -- and AzureVM template mode 15. This is not a measured security ranking.
 	-- =====================================================================
 	["AzureGodUltra"] = {
-		LuaVersion = "Lua51",
+		LuaVersion = "LuaU",
 		VarNamePrefix = "",
 		NameGenerator = "MangledShuffled",
 		PrettyPrint = false,

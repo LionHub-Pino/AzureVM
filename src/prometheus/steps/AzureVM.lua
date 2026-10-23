@@ -84,7 +84,10 @@ end
 
 function AzureVMStep:apply(ast, pipeline)
     local unparser = pipeline.unparser
+    local prevVersion = unparser.luaVersion
+    unparser.luaVersion = "Lua51"
     local raw_source = unparser:unparse(ast)
+    unparser.luaVersion = prevVersion
 
     local seed = (self.Seed and self.Seed > 0) and self.Seed
         or (pipeline.seed and pipeline.seed > 0) and pipeline.seed

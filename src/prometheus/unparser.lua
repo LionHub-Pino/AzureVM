@@ -362,23 +362,26 @@ function Unparser:unparseStatement(statement, tabbing)
 			end
 		end
 
-	elseif self.luaVersion == LuaVersion.LuaU then
-		local compoundOperators = {
-			[AstKind.CompoundAddStatement] = "+=",
-			[AstKind.CompoundSubStatement] = "-=",
-			[AstKind.CompoundMulStatement] = "*=",
-			[AstKind.CompoundDivStatement] = "/=",
-			[AstKind.CompoundModStatement] = "%=",
-			[AstKind.CompoundPowStatement] = "^=",
-			[AstKind.CompoundConcatStatement] = "..=",
+	else
+		local compoundOps51 = {
+			[AstKind.CompoundAddStatement] = "+",
+			[AstKind.CompoundSubStatement] = "-",
+			[AstKind.CompoundMulStatement] = "*",
+			[AstKind.CompoundDivStatement] = "/",
+			[AstKind.CompoundModStatement] = "%",
+			[AstKind.CompoundPowStatement] = "^",
+			[AstKind.CompoundConcatStatement] = "..",
 		}
-
-		local operator = compoundOperators[statement.kind]
-		if operator then
-			push(self:unparseExpression(statement.lhs, tabbing), self:optionalWhitespace(), operator,
-				self:optionalWhitespace(), self:unparseExpression(statement.rhs, tabbing));
-		else
-			logger:error(string.format("\"%s\" is not a valid unparseable statement in %s!", statement.kind, self.luaVersion))
+		local op51 = compoundOps51[statement.kind]
+		if op51 then
+			if self.luaVersion == LuaVersion.LuaU then
+				push(self:unparseExpression(statement.lhs, tabbing), self:optionalWhitespace(), op51 .. "=",
+					self:optionalWhitespace(), self:unparseExpression(statement.rhs, tabbing));
+			else
+				local lhs = self:unparseExpression(statement.lhs, tabbing)
+				push(lhs, self:optionalWhitespace(), "=", self:optionalWhitespace(), lhs, self:optionalWhitespace(), op51,
+					self:optionalWhitespace(), "(", self:unparseExpression(statement.rhs, tabbing), ")");
+			end
 		end
 	end
 
@@ -386,6 +389,7 @@ function Unparser:unparseStatement(statement, tabbing)
 end
 
 function Unparser:unparseExpression(expression, tabbing)
+	tabbing = tabbing or 0;
 	if expression.isParenthesizedExpression then
 		local unwrapped = {}
 		for k, v in pairs(expression) do
@@ -695,21 +699,36 @@ function Unparser:unparseExpression(expression, tabbing)
 		return joinParts(parts) .. self:optionalWhitespace((p and "," or "") .. self:newline() .. self:tabs(tabbing)) .. "}";
 	end
 
-	if (self.luaVersion == LuaVersion.LuaU) then
-		k = AstKind.IfElseExpression
-		if(expression.kind == k) then
+	k = AstKind.IfElseExpression
+	if(expression.kind == k) then
+		if (self.luaVersion == LuaVersion.LuaU) then
 			push("if ");
-			push(self:unparseExpression(expression.condition));
+			push(self:unparseExpression(expression.condition, tabbing));
 			push(" then ");
-			push(self:unparseExpression(expression.true_value));
+			push(self:unparseExpression(expression.true_value, tabbing));
 			for _, elseifexp in pairs(expression.elseifs) do
 				push(" elseif ");
-				push(self:unparseExpression(elseifexp.condition));
+				push(self:unparseExpression(elseifexp.condition, tabbing));
 				push(" then ");
-				push(self:unparseExpression(elseifexp.value));
+				push(self:unparseExpression(elseifexp.value, tabbing));
 			end
 			push(" else ");
-			push(self:unparseExpression(expression.false_value));
+			push(self:unparseExpression(expression.false_value, tabbing));
+			return joinParts(parts);
+		else
+			push("((function() if ");
+			push(self:unparseExpression(expression.condition, tabbing));
+			push(" then return ");
+			push(self:unparseExpression(expression.true_value, tabbing));
+			for _, elseifexp in pairs(expression.elseifs) do
+				push(" elseif ");
+				push(self:unparseExpression(elseifexp.condition, tabbing));
+				push(" then return ");
+				push(self:unparseExpression(elseifexp.value, tabbing));
+			end
+			push(" else return ");
+			push(self:unparseExpression(expression.false_value, tabbing));
+			push(" end end)())");
 			return joinParts(parts);
 		end
 	end
