@@ -109,7 +109,7 @@ while i <= #args do
         print_help()
         os.exit(0)
     elseif arg == "-v" or arg == "--version" then
-        print("AzureVM v2.1.0 (Luraph v15.2 Parity)")
+        print("AzureVM v2.1.0")
         os.exit(0)
     elseif arg == "-o" or arg == "--out" then
         output_file = option_value(i, arg)
