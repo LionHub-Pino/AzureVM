@@ -39,6 +39,7 @@ local function print_help()
     print("                           Luraph     : AzureVM baseline (default; not Luraph)")
     print("                           Luraph14   : AzureVM with string and number transforms")
     print("                           Luraph15   : Same transforms, more decoy handlers")
+    print("                           Luraph15_2 : Luraph v15.2 parity (traceback scan, C-dump traps, canary)")
     print("                           AzureGod   : String and number transforms, 1.5x decoys (alias: Khoidieu)")
     print("                           AzureGod15 : Same transforms, template mode 15 (alias: Biendieu, Hardcore)")
     print("                           AzureGodUltra : Deep CFF, MBA, guards and payload retry (alias: Dudieu, Immortal)")
@@ -108,7 +109,7 @@ while i <= #args do
         print_help()
         os.exit(0)
     elseif arg == "-v" or arg == "--version" then
-        print("AzureVM v2.0.0")
+        print("AzureVM v2.1.0 (Luraph v15.2 Parity)")
         os.exit(0)
     elseif arg == "-o" or arg == "--out" then
         output_file = option_value(i, arg)
@@ -207,6 +208,9 @@ local Transpiler = require("prometheus.azure_vm.transpiler")
 local clock_start = os.clock()
 
 local compile_source = source_code
+if not loadstring(compile_source) then
+    compile_source = Transpiler.transpile(compile_source)
+end
 local final_code
 
 -- For AzureGod: Apply AST mutation on raw source FIRST, then compile into VM
@@ -227,7 +231,7 @@ local Pipeline = require("prometheus.pipeline")
 local pipeline = Pipeline:fromConfig(pipeline_config)
 pipeline.Seed = seed
 pipeline.seed = seed
-final_code = pipeline:apply(source_code)
+final_code = pipeline:apply(compile_source)
 
 
 local elapsed = os.clock() - clock_start

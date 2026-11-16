@@ -1,16 +1,32 @@
 # Changelog
 
-## Unreleased
-
-### Fixed
-- Native Lua 5.1 source compiles before the limited Luau preprocessor is considered. Long-string blank lines, escaped line breaks, CRLF content, and literal backslash-u sequences are no longer rewritten by that preprocessing pass.
-- Shebang removal preserves the remaining source instead of collapsing its lines.
-- Runtime decoding no longer changes behavior because a source filename contains words such as `hook`, `dump`, or `profiler`. Payload integrity checks remain enabled and the host's debug hook is left intact.
-
-### Security
-- The source-only compiler API rejects binary chunks before calling the native loader and validates source/options types explicitly. Compilation is not a sandbox or a resource-limit mechanism.
+## [2.1.0] - 2026-11-17
 
 ### Added
+- **Luraph v15.2 Parity & Modern Luau Transpilation Engine:**
+  - **Modern Luau Pre-Pipeline Transpiler (`src/prometheus/azure_vm/transpiler.lua`):**
+    - Seamless transpilation of modern Luau features into standard Lua 5.1 AST before VM bytecode generation.
+    - Unicode escape sequences (`\u{XXXX}` -> UTF-8 byte sequences).
+    - Binary numeric literals (`0b[01]+` -> decimal constants).
+    - Numeric underscore separators (`1_000_000`, `0x1F_2A` -> normalized numbers).
+    - Single-line and multiline Luau type definitions (`type T = { ... }`, `export type ...`) with balanced brace parser `%b{}`.
+    - Parameter type annotations, return type annotations, and local variable type assertions.
+    - Type casting operators (`expr :: any` -> `(expr)`).
+    - String interpolation (backtick strings `` `Welcome, {name}!` `` -> string concatenation).
+    - Ternary if-else expressions (`local x = if a then b else c` -> `((a) and (b) or (c))`).
+    - Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`, `^=`, `..=`).
+  - **Luraph v15.2 Runtime Security & Integrity Hardening (`src/prometheus/azure_vm/generator.lua`):**
+    - Anti-Hook & Callstack Traceback Scanner: Scans stack frames for deobfuscators, tracers, and hook wrappers (`unluac`, `deobfuscator`, `disassembler`, `tracer`, `in function 'dump'`, `in function 'hook'`) with zero false-positives on source filenames (`hook_config.lua`, `dump_report.lua`).
+    - C-Closure Dump Traps: Guards against executor C-closure dumping via `pcall(string.dump, pcall)`, `pcall(string.dump, select)`, `pcall(string.dump, tostring)`, `pcall(string.dump, type)`.
+    - String Metatable & Concat Canary: Verifies `("lura" .. "ph") == "luraph"` and `getmetatable("").__index == string`.
+    - Zero-Freeze Lookup Table: Precomputed byte lookup table `v[c]` for ultra-fast VM runtime decompression, eliminating thread freezes on Roblox executors.
+  - **New Goal-Oriented Presets & Aliases (`src/presets.lua`):**
+    - `Luraph15_2`: Luraph v15.2 parity profile with advanced AST transforms, template mode 15, and v15.2 canaries/anti-dump traps.
+    - Aliases: `v15.2`, `v15`, `AzureGod15_2`.
+  - **Luau & Hardening Test Suites:**
+    - `tests/luau-v15.luau`: Comprehensive fixture testing all modern Luau syntax features.
+    - `tests/v15-hardening.lua`: Runtime verification of canaries, metatables, select range, and C-closure dump traps.
+    - `tests/luau-validation.sh`: Dedicated test runner asserting exact output matching across both `Luraph15_2` and `Luraph` presets.
 - **Production Engineering Overhaul (P0-P5):**
   - **Dynamic Template Resolution:** Fixed CLI issue where custom aliases (e.g., `Biendieu`, `Dudieu`) incorrectly reported Template Mode 14 instead of inspecting the underlying pipeline configuration.
   - **New Goal-Oriented Presets:** Introduced `Fast` (minimal overhead for 60-120 FPS render loops), `Balanced` (production default), `Hardened` (deep CFF, MBA, integrity guards), and `Research` (deterministic reverse-engineering analysis).

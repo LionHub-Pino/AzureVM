@@ -91,6 +91,7 @@ Preset names containing **`Luraph`** are historical compatibility names for Azur
 | **`Luraph14`** | AST Pre-Mutation + VM mode 14 | 1.0 | `Stealth` | AST pre-mutation mode 14 |
 | **`AzureGod`** | AST Pre-Mutation + Decoys 1.5x + VM mode 14 | 1.5 | 🎵 **`Khoidieu`** *(Chương 1 MONO)* | Enhanced decoys mode 14 |
 | **`AzureGod15`** / `Luraph15` | AST Pre-Mutation + Decoys 1.5x + VM mode 15 | 1.5 | 🎵 **`Biendieu`** *(Chương 2 MONO)*, `Hardcore`, `Armor` | Enhanced decoys mode 15 + checks |
+| **`Luraph15_2`** / `v15.2` | AST Pre-Mutation + Decoys 1.5x + VM mode 15 + Canaries & Traps | 1.5 | `v15.2`, `v15`, `AzureGod15_2` | Luraph v15.2 parity, anti-dump traps |
 | **`AzureGodUltra`** | Full Deep-CFF, Opaque Predicates, MBA 32-bit, Guards, SafeRetry | 1.5 | 🎵 **`Dudieu`** *(Chương 3 MONO)*, `Immortal` | Maximum hardening profile |
 
 The `14`/`15` suffix selects AzureVM's output-template mode, not a Luraph engine version. More transforms can increase output size and runtime cost; the table is not a security ranking.
@@ -138,7 +139,7 @@ lua azure_obf.lua <input.lua> [options]
 ```text
   -o, --out <file>       Output destination (default: <input>_protected.lua)
   --preset <name>        Select protection preset (default: Luraph)
-                         Core choices: Luraph, Luraph14, Luraph15, AzureGod, AzureGod15, AzureGodUltra
+                         Core choices: Luraph, Luraph14, Luraph15, Luraph15_2, AzureGod, AzureGod15, AzureGodUltra
                          MONO Album:   Khoidieu (Ch.1), Biendieu (Ch.2), Dudieu (Ch.3)
                          Diversified:  Clean, Life, Standard, Solid, Hardcore, Immortal
   --header <text>        Custom header comment in line 1

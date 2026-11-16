@@ -29,6 +29,7 @@ bash tests/compact-cli.sh
 bash tests/retry-cli.sh
 bash tests/benchmark-validation.sh
 bash tests/harness-validation.sh
+bash tests/luau-validation.sh
 if [ "$#" -eq 0 ]; then
     set -- Luraph Luraph14 Luraph15 AzureGod AzureGod15 AzureGodUltra
 fi

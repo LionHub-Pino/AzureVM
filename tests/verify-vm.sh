@@ -22,7 +22,7 @@ failed=0
 for source in "$repo"/tests/*.lua; do
     name="$(basename "$source")"
     case "$name" in
-        false-constants.lua|payload-integrity.lua|seed-behavior.lua|per-prototype-layout.lua|chained-layout.lua) continue ;;
+        false-constants.lua|payload-integrity.lua|seed-behavior.lua|per-prototype-layout.lua|chained-layout.lua|luau-v15.lua) continue ;;
     esac
 
     rm -f "$tmp/actual" "$tmp/actual.err"

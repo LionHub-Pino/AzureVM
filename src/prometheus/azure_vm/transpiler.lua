@@ -1,7 +1,20 @@
 --[[
-    AzureVM - limited Luau-to-Lua 5.1 text preprocessor.
-    This is not a full Luau parser or a compatibility guarantee. AzureVM.compile
-    tries native Lua 5.1 first so valid source does not pass through these rewrites.
+    AzureVM - Advanced Luau-to-Lua 5.1 Preprocessor (v1.5.2).
+    Pre-pipeline transpiler converting modern Luau Roblox constructs into standard
+    Lua 5.1 code for bytecode compilation.
+    
+    Supported Luau Features:
+    - Shebang removal
+    - Unicode escapes (\u{XXXX})
+    - Binary numbers (0b[01]+)
+    - Numeric underscores (1_000_000, 0x1F_2A)
+    - Multiline and single-line type statements (type T = { ... }, export type ...)
+    - Function parameter and return type annotations
+    - Local variable type annotations (local x: number = 10)
+    - Type casts (:: type)
+    - String interpolation (`Hello {name}!`)
+    - If-else ternary expressions (if a then b else c)
+    - Compound operators (+=, -=, *=, /=, %=, ^=, ..=)
 ]]
 
 local Transpiler = {}
@@ -34,8 +47,92 @@ function Transpiler.transpile(code)
         end
     end)
 
-    -- 3. Transpile compound operators: +=, -=, *=, /=, %=, ^=, ..=
-    -- FIXED: Only transform outside of string literals and comments
+    -- 3. Transpile binary literals: 0b1011 -> 11
+    code = code:gsub("%f[%w]0b([01]+)%f[%W]", function(bin)
+        local num = 0
+        for i = 1, #bin do
+            num = num * 2 + (bin:sub(i, i) == "1" and 1 or 0)
+        end
+        return tostring(num)
+    end)
+
+    -- 4. Transpile numeric underscores: 1_000_000 -> 1000000
+    code = code:gsub("(%f[%w]%d+)_([%d_]+)%f[%W]", function(head, tail)
+        return head .. tail:gsub("_", "")
+    end)
+    code = code:gsub("(%f[%w]0x[%da-fA-F]+)_([%da-fA-F_]+)%f[%W]", function(head, tail)
+        return head .. tail:gsub("_", "")
+    end)
+
+    -- 5. Strip multiline and single-line Luau type statements
+    code = code:gsub("(%f[%w]export[ \t]+type[ \t]+[%w_]+[ \t]*=[ \t]*%b{})", "")
+    code = code:gsub("(%f[%w]type[ \t]+[%w_]+[ \t]*=[ \t]*%b{})", "")
+    code = code:gsub("([\r\n]%s*)export[ \t]+type[ \t]+[%w_]+[ \t]*=[ \t]*[^\r\n]+", "%1")
+    code = code:gsub("([\r\n]%s*)type[ \t]+[%w_]+[ \t]*=[ \t]*[^\r\n]+", "%1")
+    code = code:gsub("^%s*export[ \t]+type[ \t]+[%w_]+[ \t]*=[ \t]*[^\r\n]+", "")
+    code = code:gsub("^%s*type[ \t]+[%w_]+[ \t]*=[ \t]*[^\r\n]+", "")
+
+    -- 6. Strip Luau type casts: expr :: any -> (expr)
+    code = code:gsub("::[ \t]*[%w_%.%[%]%<%>%?%|%& \t]+", "")
+
+    -- 7. Strip variable and function type annotations
+    code = code:gsub("(local[ \t]+)([%w_]+)[ \t]*:[ \t]*[%w_%.%[%]%<%>%?%|%& \t]+[ \t]*=", function(pfx, varname)
+        if varname == "function" then return nil end
+        return pfx .. varname .. " ="
+    end)
+    code = code:gsub("(function[ \t]*[%w_%.%:]*[ \t]*%b())[ \t]*:[ \t]*[%w_%.%[%]%<%>%?%|%& \t]+", "%1")
+    code = code:gsub("(function[ \t]*[%w_%.%:]*[ \t]*)(%b())", function(decl, params)
+        local inner = params:sub(2, -2)
+        inner = inner:gsub("([%w_]+)[ \t]*:[ \t]*[%w_%.%[%]%<%>%?%|%& \t]+", "%1")
+        return decl .. "(" .. inner .. ")"
+    end)
+
+    -- 8. Transpile String Interpolation: `Count: {x}!` -> ("Count: " .. tostring(x) .. "!")
+    code = code:gsub("`([^`]*)`", function(content)
+        local parts = {}
+        local last_idx = 1
+        local len = #content
+        while last_idx <= len do
+            local start_b, end_b = content:find("{.-}", last_idx)
+            if start_b then
+                if start_b > last_idx then
+                    local text = content:sub(last_idx, start_b - 1)
+                    table.insert(parts, string.format("%q", text))
+                end
+                local expr = content:sub(start_b + 1, end_b - 1)
+                table.insert(parts, string.format("tostring(%s)", expr))
+                last_idx = end_b + 1
+            else
+                local text = content:sub(last_idx)
+                table.insert(parts, string.format("%q", text))
+                break
+            end
+        end
+        if #parts == 0 then
+            return '""'
+        elseif #parts == 1 then
+            return parts[1]
+        else
+            return "(" .. table.concat(parts, " .. ") .. ")"
+        end
+    end)
+
+    -- 9. Transpile Luau if-else expressions
+    code = code:gsub("(%f[%w]local%s+[%w_]+%s*=%s*)if%s+(.-)%s+then%s+(.-)%s+else%s+([^\r\n;]+)", function(pfx, c, t, f)
+        f = f:match("^%s*(.-)%s*$")
+        return string.format("%s((%s) and (%s) or (%s))", pfx, c, t, f)
+    end)
+    code = code:gsub("(%f[%w][%w_%.%[%]]+%s*=%s*)if%s+(.-)%s+then%s+(.-)%s+else%s+([^\r\n;]+)", function(pfx, c, t, f)
+        if pfx:find("^%s*if%s+") then return nil end
+        f = f:match("^%s*(.-)%s*$")
+        return string.format("%s((%s) and (%s) or (%s))", pfx, c, t, f)
+    end)
+    code = code:gsub("(%f[%w]return%s+)if%s+(.-)%s+then%s+(.-)%s+else%s+([^\r\n;]+)", function(pfx, c, t, f)
+        f = f:match("^%s*(.-)%s*$")
+        return string.format("%s((%s) and (%s) or (%s))", pfx, c, t, f)
+    end)
+
+    -- 10. Transpile compound operators outside strings and comments
     local function expand_compound_safe(line)
         -- Skip lines that are pure comments
         if line:match("^%s*%-%-") then return line end
@@ -46,14 +143,13 @@ function Transpiler.transpile(code)
         local len = #line
         while i <= len do
             local ch = line:sub(i, i)
-            -- Handle string literals - skip over them entirely
             if ch == '"' or ch == "'" then
                 local quote = ch
                 local j = i + 1
                 while j <= len do
                     local c = line:sub(j, j)
                     if c == '\\' then
-                        j = j + 2  -- skip escape sequence
+                        j = j + 2
                     elseif c == quote then
                         j = j + 1
                         break
@@ -64,7 +160,6 @@ function Transpiler.transpile(code)
                 result[#result+1] = line:sub(i, j - 1)
                 i = j
             elseif ch == '[' and (line:sub(i, i+1) == '[[' or line:sub(i, i+1) == '[=') then
-                -- Long string literal, find matching close
                 local eq = line:match('^%[(=*)%[', i)
                 if eq then
                     local close = ']' .. eq .. ']'
@@ -82,7 +177,6 @@ function Transpiler.transpile(code)
                     i = i + 1
                 end
             elseif line:sub(i, i+1) == '--' then
-                -- Comment to end of line
                 result[#result+1] = line:sub(i)
                 i = len + 1
             else
@@ -93,11 +187,8 @@ function Transpiler.transpile(code)
         
         local reconstructed = table.concat(result)
         
-        -- Now try to match compound operators only on the code portion
-        -- We need to check if the compound op is actually in code, not in a string
         local lhs, op, rhs = reconstructed:match("^(%s*[%w_%.%[%]]+)%s*([%+%-%*%/%%%^]%=)%s*(.-)$")
         if lhs and op and rhs then
-            -- Verify lhs is a valid assignment target (not inside a string)
             local pure_op = op:sub(1, 1)
             lhs = lhs:match("^%s*(.-)%s*$")
             return string.format("%s = %s %s (%s)", lhs, lhs, pure_op, rhs)
