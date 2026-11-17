@@ -630,8 +630,10 @@ function Encoder:serialize_to_blob(encoded_ast)
             old_prev = enc_w
 
             local new_mode = (lm + ((new_prev + layout_salt) % 3)) % 3
+            local rop_key = (dg_init + i * 37 + new_prev) % 256
+            local rolled_op = (rand_op + rop_key) % 256
             local new_raw = pack_with_layout(spec.layouts[new_mode], {
-                op = rand_op, a = a, b = b, c = c
+                op = rolled_op, a = a, b = b, c = c
             })
             local new_key = self:inst_key(i, new_prev, pk)
             local new_enc = (new_raw + new_key) % POW2_34

@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.3.0] - 2026-11-17
+
+### Added
+- **Dynamic Rolling Opcode Keying (`src/prometheus/azure_vm/encoder.lua` & `generator.lua`):**
+  - Eliminated static 1-to-1 opcode mapping by keying every instruction's opcode with dynamic running PRNG digest: `rop_key = (dg_init + i * 37 + new_prev) % 256`.
+  - Every single instruction position now resolves to an unpredictable opcode value that shifts per execution step based on ciphertext feedback, completely neutralizing static opcode table reconstructors and disassembly matrix mappers.
+- **Sealed Dispatch Table & Mutation Trapping:**
+  - Sealed opcode dispatch table using a metatable proxy (`__index = raw_disp, __newindex = function() TRAP(nil) end, __metatable = false`).
+  - The internal VM dispatch loop executes strictly from the lexically scoped `raw_disp` table.
+  - Any external attempt to overwrite or hook opcode handlers (`disp[201] = hook`) triggers an immediate runtime integrity fail-closed crash, and `rawset` mutations write to a dead decoy wrapper table that the VM loop never executes from.
+- **Prototype Anti-Reflection & Caller Verification Metatable:**
+  - Prototype table `ROOTP` wrapped in an anti-reflection metatable with caller inspection (`debug.getinfo(2, "f")`).
+  - Only authorized VM closures registered in `OWNED` (`EXEC`, `TRAMP`, `WRAP`, and valid dispatch handlers) are permitted to index prototype structures.
+  - External table dumpers (such as `dump_p(y1Erz)`) attempting to harvest bytecode instructions, constants, or child prototypes are immediately trapped and terminated.
+- **Masked Dynamic Entrypoint Bootstrap:**
+  - Replaced the static return call `return EXEC(ROOTP, GENV, {}, ...)` with a masked randomized dictionary dispatch: `local _boot = {[MAGIC_BOOT] = EXEC}; return _boot[MAGIC_BOOT](ROOTP, GENV, {}, ...)`.
+  - Neutralizes regex and AST string-matching scripts searching for fixed VM entrypoint signatures.
+- **Centralized String Decryptor Elimination (`src/presets.lua`):**
+  - Removed Prometheus's AST `EncryptStrings` pre-pass from AzureVM presets (`Luraph14`, `Luraph15`, `AzureGod`, `AzureGod15`, `AzureGodUltra`, `Balanced`, `Hardened`, `Research`).
+  - Eliminates the centralized `main_1` string decryptor helper function and corresponding `OP_CALL` instructions.
+  - All strings are now protected exclusively by AzureVM's native 128-bit 2-pass bidirectional S-box ARX cipher embedded in the VM blob, completely depriving dynamic `CALL` tracers of runtime string interception.
+
 ## [2.2.0] - 2026-11-17
 
 ### Added

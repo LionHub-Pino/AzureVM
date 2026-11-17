@@ -122,7 +122,7 @@ local presets = {
 
 	-- =====================================================================
     -- Luraph14: AzureVM template mode 14 with AST pre-transforms
-	-- AST Pre-Mutation: SplitStrings + EncryptStrings + NumbersToExpressions
+	-- AST Pre-Mutation: SplitStrings + NumbersToExpressions
     -- Virtualization: AzureVM template mode 14
 	-- =====================================================================
 	["Luraph14"] = {
@@ -133,7 +133,6 @@ local presets = {
 		Seed = 0,
 		Steps = {
 			{ Name = "SplitStrings", Settings = {} },
-			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 14, DecoyDensity = 1.0 } },
 		},
@@ -141,7 +140,7 @@ local presets = {
 
 	-- =====================================================================
     -- Luraph15: AzureVM template mode 15 with AST pre-transforms
-	-- AST Pre-Mutation: SplitStrings + EncryptStrings + NumbersToExpressions
+	-- AST Pre-Mutation: SplitStrings + NumbersToExpressions
     -- Virtualization: AzureVM template mode 15
 	-- Fingerprint: LPH_JIT_ULTRA + pcall(debug.getinfo, 2, "f") + getupvalue checks
 	-- =====================================================================
@@ -153,7 +152,6 @@ local presets = {
 		Seed = 0,
 		Steps = {
 			{ Name = "SplitStrings", Settings = {} },
-			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.2 } },
 		},
@@ -170,7 +168,6 @@ local presets = {
 		Seed = 0,
 		Steps = {
 			{ Name = "SplitStrings", Settings = {} },
-			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 14, DecoyDensity = 1.5 } },
 		},
@@ -187,7 +184,6 @@ local presets = {
 		Seed = 0,
 		Steps = {
 			{ Name = "SplitStrings", Settings = {} },
-			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.5 } },
 		},
@@ -208,7 +204,6 @@ local presets = {
 			{ Name = "OpaquePredicates", Settings = { Threshold = 0.5, MaxPerBlock = 2 } },
 			{ Name = "DeepControlFlowFlattening", Settings = { Threshold = 1.0, MinStatements = 3, ShuffleStates = true, OpaqueDispatch = true, MaxStates = 128 } },
 			{ Name = "SplitStrings", Settings = {} },
-			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.5, RuntimeChecks = true, InitializationRetries = 2 } },
 			{ Name = "SafeRetryWrapper", Settings = { RetryCount = 3 } },
@@ -241,7 +236,6 @@ local presets = {
 		Seed = 0,
 		Steps = {
 			{ Name = "SplitStrings", Settings = {} },
-			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 14, DecoyDensity = 1.0 } },
 		},
@@ -262,7 +256,6 @@ local presets = {
 			{ Name = "OpaquePredicates", Settings = { Threshold = 0.5, MaxPerBlock = 2 } },
 			{ Name = "DeepControlFlowFlattening", Settings = { Threshold = 1.0, MinStatements = 3, ShuffleStates = true, OpaqueDispatch = true, MaxStates = 128 } },
 			{ Name = "SplitStrings", Settings = {} },
-			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.5, RuntimeChecks = true, InitializationRetries = 2 } },
 			{ Name = "SafeRetryWrapper", Settings = { RetryCount = 3 } },
@@ -283,7 +276,6 @@ local presets = {
 			{ Name = "MixedBooleanArithmetic", Settings = { Threshold = 0.5, MaxTransforms = 16 } },
 			{ Name = "OpaquePredicates", Settings = { Threshold = 0.3, MaxPerBlock = 1 } },
 			{ Name = "SplitStrings", Settings = {} },
-			{ Name = "EncryptStrings", Settings = {} },
 			{ Name = "NumbersToExpressions", Settings = { NumberRepresentationMutation = true } },
 			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.0, RuntimeChecks = true, InitializationRetries = 1 } },
 		},

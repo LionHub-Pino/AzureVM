@@ -233,7 +233,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
         "vpr","venv","vuv","tokmt","owned","tramp","tok","pr_v","env_v","uv_v","p_in","e_in","u_in","w_fn","w_tok","cur_env",
         "wrap","exec","poison","call_cnt","active_ins","trap","tr_msg","tr_ins","tr_t","tr_i","tr_s",
         "parse","pw","ppe","play","pmode","pop","pa","pb","pc","pbx",
-        "disp","dispref","disp1","dispref1","nops_chk","ksum_chk","disp_k","disp_v",
+        "disp","dispref","disp1","dispref1","raw_disp","raw_dispref","raw_disp1","raw_dispref1","nops_chk","ksum_chk","disp_k","disp_v",
         -- __EXEC internals
         "pr","env","upvals","reg","vargs","openuvs","stop","ipc","storage","stride","shift","pk_k","pk_v",
         "vlen","instr","konst","protos","layout","rk","rk_i","closeuv","lim","uv_x","nextk","nk_ipc","nk_pe","nk_plo","nk_phi","nk_h","nk_hlo","nk_hhi","nk_rot",
@@ -243,7 +243,7 @@ function Generator.emit(encoded_root, encoder_instance, options)
         "hl_i","hl_u","hl_q","hl_w","hl_s","hl_g","hl_n","hl_r","hl_l","hl_cb","hl_var","hl_pe","hl_e","hl_nk","hl_nw","hl_cbx","hl_o","hl_t","hl_p","hl_uv","hl_pb","hl_op",
         -- Close loop & checks
         "ctr","c_e","c_pe","c_k","c_w","c_op","c_a","c_b","c_c","c_bx","c_sbx","c_f","c_rf","c_tk","c_r","c_df","c_drf","c_dv",
-        "genv","c_can","c_k2","c_strmt","c_sa","c_sb","c_sab","c_ok","c_err","c_info","c_co","c_ef","c_tb","c_ok2","c_res",
+        "genv","c_can","c_k2","c_strmt","c_sa","c_sb","c_sab","c_ok","c_err","c_info","c_co","c_ef","c_tb","c_ok2","c_res","rok","hrok","magic_boot",
     }
     for _, k in ipairs(var_keys) do V[k] = ng() end
 
@@ -680,14 +680,14 @@ local @@ASTV@@=(@@READP@@(@@BINV@@,1))
     local function disp_slot(op)
         if disp_mode == 0 then
             local tk = (op * d_mul0 + d_add0) % 256
-            return string.format("%s[%d]", V.disp, tk)
+            return string.format("%s[%d]", V.raw_disp, tk)
         else
             if op < split_thr then
                 local tk = (op * d_mul0 + d_add0) % 256
-                return string.format("%s[%d]", V.disp, tk)
+                return string.format("%s[%d]", V.raw_disp, tk)
             else
                 local tk = (op * d_mul1 + d_add1) % 256
-                return string.format("%s[%d]", V.disp1, tk)
+                return string.format("%s[%d]", V.raw_disp1, tk)
             end
         end
     end
@@ -748,8 +748,10 @@ if %s and (%s(%s)~="table" or %s.concat~=%s) then %s(nil,%s) end]],
         V.concat_ref, V.typefn, V.tbllib, V.tbllib, V.concat_ref, V.trap, V.instr) or ""
 
     local disp_decl = (disp_mode == 0)
-        and string.format("local %s,%s={},{}", V.disp, V.dispref)
-        or string.format("local %s,%s,%s,%s={},{},{},{}", V.disp, V.dispref, V.disp1, V.dispref1)
+        and string.format("local %s,%s={},{} local %s=%s({},{__index=%s,__newindex=function() %s(nil) end,__metatable=false})",
+            V.raw_disp, V.raw_dispref, V.disp, V.setmt, V.raw_disp, V.trap)
+        or string.format("local %s,%s,%s,%s={},{},{},{} local %s=%s({},{__index=%s,__newindex=function() %s(nil) end,__metatable=false}) local %s=%s({},{__index=%s,__newindex=function() %s(nil) end,__metatable=false})",
+            V.raw_disp, V.raw_dispref, V.raw_disp1, V.raw_dispref1, V.disp, V.setmt, V.raw_disp, V.trap, V.disp1, V.setmt, V.raw_disp1, V.trap)
 
     local engine_tmpl = [==[
 local @@STRLIB@@,@@TBLLIB@@,@@DBGLIB@@,@@COROLIB@@,@@ERRORFN@@,@@SELECTFN@@,@@ABSFN@@,@@GETMTFN@@,@@PAIRSFN@@=string,table,debug,coroutine,error,select,math and math.abs,getmetatable,pairs
@@ -937,8 +939,8 @@ local @@DACC@@=@@DACC_INIT@@
     add_h(34, string.format("local %s=(%s==0)and(%s-%s)or %s if %s==0 then local %s=(%s>1)and(%s[%s-1]or 0)or 0 local %s=%s[%s]local %s=%s(%s,%s)%s=%s+1 local %s=(%s-%s)%%%s if %s<0 then %s=%s+%s end local _,_,_,_,%s=%s(%s,%s,%s)%s=%s end local %s=(%s-1)*50 local %s=%s[%s]for %s=1,%s do %s[%s+%s]=%s[%s+%s]end",
         HN, HB, TOP, HA, HB, HC, HPE, PC, INS, PC, HE, INS, PC, HNK, NEXTK, PC, HPE, PC, PC, HNW, HE, HNK, KMOD_S, HNW, HNW, HNW, KMOD_S, HCBX, PRS, HNW, HPE, LAY, HC, HCBX, HO, HC, HT, HR, HA, HI, HN, HT, HO, HI, HR, HA, HI))
     add_h(35, string.format("%s(%s)", CL, HA))
-    add_h(36, string.format("local %s=%s[%s]local %s={}for %s=0,%s[%d]-1 do local %s=(%s>1)and(%s[%s-1]or 0)or 0 local %s=%s[%s]local %s=%s(%s,%s)%s=%s+1 local %s=(%s-%s)%%%s if %s<0 then %s=%s+%s end local %s,_,%s=%s(%s,%s,%s)%s=((%s-%s)*%s)%%256 if %s==%d then if not %s[%s]then %s[%s]={%s,%s}end %s[%s]=%s[%s]else %s[%s]=%s[%s]end end %s[%s]=%s(%s,%s,%s)",
-        HP, PS, HBX, HUV, HI, HP, pkeys.up, HPE, PC, INS, PC, HE, INS, PC, HNK, NEXTK, PC, HPE, PC, PC, HNW, HE, HNK, KMOD_S, HNW, HNW, HNW, KMOD_S, HOP, HPB, PRS, HNW, HPE, LAY, HOP, HOP, V.poa, V.pom, HOP, O[0], OUV, HPB, OUV, HPB, HR, HPB, HUV, HI, OUV, HPB, HUV, HI, UV, HPB, HR, HA, WR, HP, ENV, HUV))
+    add_h(36, string.format("local %s=%s[%s]local %s={}for %s=0,%s[%d]-1 do local %s=(%s>1)and(%s[%s-1]or 0)or 0 local %s=%s[%s]local %s=%s(%s,%s)%s=%s+1 local %s=(%s-%s)%%%s if %s<0 then %s=%s+%s end local %s,_,%s=%s(%s,%s,%s)local %s=(%d+(%s-1)*37+%s)%%256 %s=((%s-%s-%s)*%s)%%256 if %s==%d then if not %s[%s]then %s[%s]={%s,%s}end %s[%s]=%s[%s]else %s[%s]=%s[%s]end end %s[%s]=%s(%s,%s,%s)",
+        HP, PS, HBX, HUV, HI, HP, pkeys.up, HPE, PC, INS, PC, HE, INS, PC, HNK, NEXTK, PC, HPE, PC, PC, HNW, HE, HNK, KMOD_S, HNW, HNW, HNW, KMOD_S, HOP, HPB, PRS, HNW, HPE, LAY, V.hrok, dgk.dg_init, PC, HPE, HOP, HOP, V.hrok, V.poa, V.pom, HOP, O[0], OUV, HPB, OUV, HPB, HR, HPB, HUV, HI, OUV, HPB, HUV, HI, UV, HPB, HR, HA, WR, HP, ENV, HUV))
     add_h(37, string.format("local %s=(%s==0)and(%s-%s[%d])or(%s-1)for %s=1,%s do %s[%s+%s-1]=%s[%s[%d]+%s]end if %s==0 then %s=%s+%s-1 end",
         HN, HB, VLEN, PR, pkeys.np, HB, HI, HN, HR, HA, HI, VA, PR, pkeys.np, HI, HB, TOP, HA, HN))
 
@@ -974,19 +976,19 @@ local @@DACC@@=@@DACC_INIT@@
     if disp_mode == 0 then
         disp_snap_code = string.format(
             "local %s,%s=0,0 for %s,%s in %s(%s)do %s=%s+1 %s=%s+%s %s[%s]=%s %s[%s]=true end if %s~=%d or %s~=%d then %s(nil) end",
-            V.nops_chk, V.ksum_chk, V.disp_k, V.disp_v, V.pairsfn, V.disp,
+            V.nops_chk, V.ksum_chk, V.disp_k, V.disp_v, V.pairsfn, V.raw_disp,
             V.nops_chk, V.nops_chk, V.ksum_chk, V.ksum_chk, V.disp_k,
-            V.dispref, V.disp_k, V.disp_v, V.owned, V.disp_v,
+            V.raw_dispref, V.disp_k, V.disp_v, V.owned, V.disp_v,
             V.nops_chk, total_handlers, V.ksum_chk, key_sum, V.trap)
     else
         disp_snap_code = string.format(
             "local %s,%s=0,0 for %s,%s in %s(%s)do %s=%s+1 %s=%s+%s %s[%s]=%s %s[%s]=true end for %s,%s in %s(%s)do %s=%s+1 %s=%s+%s %s[%s]=%s %s[%s]=true end if %s~=%d or %s~=%d then %s(nil) end",
-            V.nops_chk, V.ksum_chk, V.disp_k, V.disp_v, V.pairsfn, V.disp,
+            V.nops_chk, V.ksum_chk, V.disp_k, V.disp_v, V.pairsfn, V.raw_disp,
             V.nops_chk, V.nops_chk, V.ksum_chk, V.ksum_chk, V.disp_k,
-            V.dispref, V.disp_k, V.disp_v, V.owned, V.disp_v,
-            V.disp_k, V.disp_v, V.pairsfn, V.disp1,
+            V.raw_dispref, V.disp_k, V.disp_v, V.owned, V.disp_v,
+            V.disp_k, V.disp_v, V.pairsfn, V.raw_disp1,
             V.nops_chk, V.nops_chk, V.ksum_chk, V.ksum_chk, V.disp_k,
-            V.dispref1, V.disp_k, V.disp_v, V.owned, V.disp_v,
+            V.raw_dispref1, V.disp_k, V.disp_v, V.owned, V.disp_v,
             V.nops_chk, total_handlers, V.ksum_chk, key_sum, V.trap)
     end
 
@@ -999,13 +1001,13 @@ local @@DACC@@=@@DACC_INIT@@
         local function lookup_expr(op_num, f_var, rf_var)
             if disp_mode == 0 then
                 local tk = (op_num * d_mul0 + d_add0) % 256
-                return string.format("local %s,%s=%s[%d],%s[%d]", f_var, rf_var, V.disp, tk, V.dispref, tk)
+                return string.format("local %s,%s=%s[%d],%s[%d]", f_var, rf_var, V.raw_disp, tk, V.raw_dispref, tk)
             elseif op_num < split_thr then
                 local tk = (op_num * d_mul0 + d_add0) % 256
-                return string.format("local %s,%s=%s[%d],%s[%d]", f_var, rf_var, V.disp, tk, V.dispref, tk)
+                return string.format("local %s,%s=%s[%d],%s[%d]", f_var, rf_var, V.raw_disp, tk, V.raw_dispref, tk)
             else
                 local tk = (op_num * d_mul1 + d_add1) % 256
-                return string.format("local %s,%s=%s[%d],%s[%d]", f_var, rf_var, V.disp1, tk, V.dispref1, tk)
+                return string.format("local %s,%s=%s[%d],%s[%d]", f_var, rf_var, V.raw_disp1, tk, V.raw_dispref1, tk)
             end
         end
         local call1_args = perm_call_args({ V.dec_reg, "1", "2", "3", "4", "0" })
@@ -1050,13 +1052,13 @@ if %s<0 then %s(nil,%s) end]],
     if disp_mode == 0 then
         disp_lookup_code = string.format(
             "local %s=(%s*%d+%d)%%256 local %s,%s=%s[%s],%s[%s]",
-            V.c_tk, V.c_op, d_mul0, d_add0, V.c_f, V.c_rf, V.disp, V.c_tk, V.dispref, V.c_tk)
+            V.c_tk, V.c_op, d_mul0, d_add0, V.c_f, V.c_rf, V.raw_disp, V.c_tk, V.raw_dispref, V.c_tk)
     else
         disp_lookup_code = string.format(
             "local %s,%s if %s<%d then local %s=(%s*%d+%d)%%256 %s,%s=%s[%s],%s[%s] else local %s=(%s*%d+%d)%%256 %s,%s=%s[%s],%s[%s] end",
             V.c_f, V.c_rf, V.c_op, split_thr,
-            V.c_tk, V.c_op, d_mul0, d_add0, V.c_f, V.c_rf, V.disp, V.c_tk, V.dispref, V.c_tk,
-            V.c_tk, V.c_op, d_mul1, d_add1, V.c_f, V.c_rf, V.disp1, V.c_tk, V.dispref1, V.c_tk)
+            V.c_tk, V.c_op, d_mul0, d_add0, V.c_f, V.c_rf, V.raw_disp, V.c_tk, V.raw_dispref, V.c_tk,
+            V.c_tk, V.c_op, d_mul1, d_add1, V.c_f, V.c_rf, V.raw_disp1, V.c_tk, V.raw_dispref1, V.c_tk)
     end
 
     local close_call_args = perm_call_args({ V.reg, V.c_a, V.c_b, V.c_c, V.c_bx, V.c_sbx })
@@ -1195,7 +1197,8 @@ local @@CK@@=@@NEXTK@@(@@IPC@@,@@CPE@@)
 local @@CW@@=(@@CE@@-@@CK@@)%17179869184
 if @@CW@@<0 then @@CW@@=@@CW@@+17179869184 end
 local @@COP@@,@@CA@@,@@CB@@,@@CC@@,@@CBX@@,@@CSBX@@=@@PARSE@@(@@CW@@,@@CPE@@,@@LAYOUT@@)
-@@COP@@=((@@COP@@-@@POA@@)*@@POM@@)%256
+local @@ROK@@=(@@DG_INIT@@+(@@IPC@@-1)*37+@@CPE@@)%256
+@@COP@@=((@@COP@@-@@ROK@@-@@POA@@)*@@POM@@)%256
 @@ACTIVE_DECOY@@
 @@DISP_LOOKUP@@
 if not @@CF@@ or @@CF@@~=@@CRF@@ then @@TRAP@@(nil,@@INSTR@@) end
@@ -1208,9 +1211,18 @@ end
 local @@GENV@@=(getfenv and getfenv())or _ENV or _G
 @@CAP_SECTION@@
 if @@POISON@@>0 then @@TRAP@@(nil) end
-local @@ROOTP@@=@@ASTV@@
+local _raw_p=@@ASTV@@
 @@ASTV@@=nil
-return @@EXEC@@(@@ROOTP@@,@@GENV@@,{},...)
+local @@ROOTP@@=@@SETMT@@({},{
+__index=function(_,_k)
+local _cl=@@DBGLIB@@ and @@DBGLIB@@.getinfo and @@DBGLIB@@.getinfo(2,"f")
+if _cl and not @@OWNED@@[_cl.func] then @@TRAP@@(nil) end
+return _raw_p[_k]
+end,
+__newindex=function() @@TRAP@@(nil) end,
+__metatable=false})
+local _boot={[@@MAGIC_BOOT@@]=@@EXEC@@}
+return _boot[@@MAGIC_BOOT@@](@@ROOTP@@,@@GENV@@,{},...)
 ]==]
 
     local close = subst(close_tmpl, {
@@ -1218,6 +1230,8 @@ return @@EXEC@@(@@ROOTP@@,@@GENV@@,{},...)
         CE = V.c_e, IPC = V.ipc, CPE = V.c_pe, CK = V.c_k, NEXTK = V.nextk,
         CW = V.c_w, COP = V.c_op, CA = V.c_a, CB = V.c_b, CC = V.c_c, CBX = V.c_bx, CSBX = V.c_sbx,
         PARSE = V.parse, LAYOUT = V.layout, POA = V.poa, POM = V.pom,
+        ROK = V.rok, DG_INIT = tostring(dgk.dg_init), DBGLIB = V.dbglib, SETMT = V.setmt,
+        MAGIC_BOOT = tostring(gen_rng:range(100000, 9999999)),
         ACTIVE_DECOY = active_decoy_code,
         DISP_LOOKUP = disp_lookup_code,
         CF = V.c_f, CRF = V.c_rf,
@@ -1236,9 +1250,9 @@ return @@EXEC@@(@@ROOTP@@,@@GENV@@,{},...)
         if trap_harness then
             lph_header = string.format("-- [0x%08x%08x]", gen_rng:next32(), gen_rng:next32())
         elseif lph_ver == 14 then
-            lph_header = "-- Generated by AzureVM v2.1.0 (template mode 14)"
+            lph_header = "-- Generated by AzureVM v2.3.0 (template mode 14)"
         else
-            lph_header = "-- This file was protected using Azure VM v2.1.0 (Luraph v15.2 Parity) [https://github.com/LionHub-Pino/AzureVM]"
+            lph_header = "-- This file was protected using Azure VM v2.3.0 (Luraph v15.2 Parity) [https://github.com/LionHub-Pino/AzureVM]"
         end
     else
         if not lph_header:match("^%-%-") then
