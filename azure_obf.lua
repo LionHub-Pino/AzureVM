@@ -47,6 +47,7 @@ local function print_help()
     print("                           Biendieu      : Chương 2 MONO (Template mode 15, high hardening)")
     print("                           Dudieu        : Chương 3 MONO (Deep CFF, MBA, Guards, Retry)")
     print("                           Fast          : Zero bloat, minimal VM overhead (high FPS)")
+    print("                           Luraph15_Ultra: Pure VM architecture, zero AST steps, Luraph v15.2 parity")
     print("                           Balanced      : Optimized protection and execution efficiency")
     print("                           Hardened      : Multi-layer CFF, MBA, VM15, Integrity Guards")
     print("                           Research      : AST metrics & deobfuscation analysis profile")
@@ -109,7 +110,7 @@ while i <= #args do
         print_help()
         os.exit(0)
     elseif arg == "-v" or arg == "--version" then
-        print("AzureVM v2.3.0")
+        print("AzureVM v3.0.0")
         os.exit(0)
     elseif arg == "-o" or arg == "--out" then
         output_file = option_value(i, arg)

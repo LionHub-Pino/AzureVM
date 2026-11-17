@@ -208,10 +208,17 @@ function Generator.emit(encoded_root, encoder_instance, options)
     local gen_rng = make_gen_prng(encoder_instance.seed, 987654321)
 
     local O = {}
+    local O2 = {}
     local used_ops = {}
     for i = 0, 37 do
         O[i] = op_map[i]
         used_ops[op_map[i]] = true
+        if encoder_instance.opcode_map2 and encoder_instance.opcode_map2[i] then
+            O2[i] = encoder_instance.opcode_map2[i]
+            used_ops[O2[i]] = true
+        else
+            O2[i] = op_map[i]
+        end
     end
 
     -- Generate polymorphic variable names for 100% of identifiers
@@ -810,10 +817,11 @@ for @@DGI@@=1,#@@INSTR@@ do @@DGV@@=(@@DGV@@*@@DG_MUL@@+@@INSTR@@[@@DGI@@]+@@DGI
 if @@DGV@@~=@@PR@@[@@P_DG@@]then @@TRAP@@(nil,@@INSTR@@) end
 local @@REG@@,@@VARGS@@,@@OPENUVS@@,@@STOP@@,@@IPC@@={},{...},{},0,1
 local @@STORAGE@@={} local @@STRIDE@@=@@PR@@[@@P_OM@@]*2+1
-local @@SHIFT@@=(@@SHIFT_SALT@@+@@PR@@[@@P_OA@@]*@@SHIFT_MUL@@)%4294967296
+local @@SHIFT@@=(@@SHIFT_SALT@@+@@PR@@[@@P_OA@@]*@@SHIFT_MUL@@+@@CALL_CNT@@*79)%4294967296
 @@SETMT@@(@@REG@@,{
 __index=function(_,@@PKK@@)return @@STORAGE@@[(@@PKK@@*@@STRIDE@@+@@SHIFT@@)%4294967296]end,
-__newindex=function(_,@@PKK@@,@@PKV@@)@@STORAGE@@[(@@PKK@@*@@STRIDE@@+@@SHIFT@@)%4294967296]=@@PKV@@ end
+__newindex=function(_,@@PKK@@,@@PKV@@)@@STORAGE@@[(@@PKK@@*@@STRIDE@@+@@SHIFT@@)%4294967296]=@@PKV@@ end,
+__metatable=false
 })
 local @@VLEN@@=@@SELECTFN@@("#",...)
 local @@LAYOUT@@=@@PR@@[@@P_LM@@]
@@ -896,6 +904,9 @@ local @@DACC@@=@@DACC_INIT@@
     local function add_h(op_idx, body)
         d_entries[#d_entries + 1] = string.format("%s=function(%s)%s end", disp_slot(O[op_idx]), formal_params, body)
     end
+    local function add_h2(op_idx, body)
+        d_entries[#d_entries + 1] = string.format("%s=function(%s)%s end", disp_slot(O2[op_idx]), formal_params, body)
+    end
 
     add_h(0,  string.format("%s[%s]=%s[%s]", HR, HA, HR, HB))
     add_h(1,  string.format("%s[%s]=%s[%s]", HR, HA, K, HBX))
@@ -939,9 +950,57 @@ local @@DACC@@=@@DACC_INIT@@
     add_h(34, string.format("local %s=(%s==0)and(%s-%s)or %s if %s==0 then local %s=(%s>1)and(%s[%s-1]or 0)or 0 local %s=%s[%s]local %s=%s(%s,%s)%s=%s+1 local %s=(%s-%s)%%%s if %s<0 then %s=%s+%s end local _,_,_,_,%s=%s(%s,%s,%s)%s=%s end local %s=(%s-1)*50 local %s=%s[%s]for %s=1,%s do %s[%s+%s]=%s[%s+%s]end",
         HN, HB, TOP, HA, HB, HC, HPE, PC, INS, PC, HE, INS, PC, HNK, NEXTK, PC, HPE, PC, PC, HNW, HE, HNK, KMOD_S, HNW, HNW, HNW, KMOD_S, HCBX, PRS, HNW, HPE, LAY, HC, HCBX, HO, HC, HT, HR, HA, HI, HN, HT, HO, HI, HR, HA, HI))
     add_h(35, string.format("%s(%s)", CL, HA))
-    add_h(36, string.format("local %s=%s[%s]local %s={}for %s=0,%s[%d]-1 do local %s=(%s>1)and(%s[%s-1]or 0)or 0 local %s=%s[%s]local %s=%s(%s,%s)%s=%s+1 local %s=(%s-%s)%%%s if %s<0 then %s=%s+%s end local %s,_,%s=%s(%s,%s,%s)local %s=(%d+(%s-1)*37+%s)%%256 %s=((%s-%s-%s)*%s)%%256 if %s==%d then if not %s[%s]then %s[%s]={%s,%s}end %s[%s]=%s[%s]else %s[%s]=%s[%s]end end %s[%s]=%s(%s,%s,%s)",
-        HP, PS, HBX, HUV, HI, HP, pkeys.up, HPE, PC, INS, PC, HE, INS, PC, HNK, NEXTK, PC, HPE, PC, PC, HNW, HE, HNK, KMOD_S, HNW, HNW, HNW, KMOD_S, HOP, HPB, PRS, HNW, HPE, LAY, V.hrok, dgk.dg_init, PC, HPE, HOP, HOP, V.hrok, V.poa, V.pom, HOP, O[0], OUV, HPB, OUV, HPB, HR, HPB, HUV, HI, OUV, HPB, HUV, HI, UV, HPB, HR, HA, WR, HP, ENV, HUV))
+    add_h(36, string.format("local %s=%s[%s]local %s={}for %s=0,%s[%d]-1 do local %s=(%s>1)and(%s[%s-1]or 0)or 0 local %s=%s[%s]local %s=%s(%s,%s)%s=%s+1 local %s=(%s-%s)%%%s if %s<0 then %s=%s+%s end local %s,_,%s=%s(%s,%s,%s)local %s=(%d+(%s-1)*37+%s)%%256 %s=((%s-%s-%s)*%s)%%256 if %s==%d or %s==%d then if not %s[%s]then %s[%s]={%s,%s}end %s[%s]=%s[%s]else %s[%s]=%s[%s]end end %s[%s]=%s(%s,%s,%s)",
+        HP, PS, HBX, HUV, HI, HP, pkeys.up, HPE, PC, INS, PC, HE, INS, PC, HNK, NEXTK, PC, HPE, PC, PC, HNW, HE, HNK, KMOD_S, HNW, HNW, HNW, KMOD_S, HOP, HPB, PRS, HNW, HPE, LAY, V.hrok, dgk.dg_init, PC, HPE, HOP, HOP, V.hrok, V.poa, V.pom, HOP, O[0], HOP, O2[0], OUV, HPB, OUV, HPB, HR, HPB, HUV, HI, OUV, HPB, HUV, HI, UV, HPB, HR, HA, WR, HP, ENV, HUV))
     add_h(37, string.format("local %s=(%s==0)and(%s-%s[%d])or(%s-1)for %s=1,%s do %s[%s+%s-1]=%s[%s[%d]+%s]end if %s==0 then %s=%s+%s-1 end",
+        HN, HB, VLEN, PR, pkeys.np, HB, HI, HN, HR, HA, HI, VA, PR, pkeys.np, HI, HB, TOP, HA, HN))
+
+    -- === Polymorphic Multi-Handler Variant 2 Handlers (O2) ===
+    add_h2(0,  string.format("local %s=%s[%s] %s[%s]=%s", HQ, HR, HB, HR, HA, HQ))
+    add_h2(1,  string.format("local %s=%s[%s] %s[%s]=%s", HQ, K, HBX, HR, HA, HQ))
+    add_h2(2,  string.format("if %s==0 then %s[%s]=false else %s[%s]=true end if %s~=0 then %s=%s+1 end", HB, HR, HA, HR, HA, HC, PC, PC))
+    add_h2(3,  string.format("local %s=%s while %s<=%s do %s[%s]=nil %s=%s+1 end", HI, HA, HI, HB, HR, HI, HI, HI))
+    add_h2(4,  string.format("local %s=%s[%s]local %s,%s=%s[1],%s[2] %s[%s]=%s[%s]", HU, UV, HB, HQ, HW, HU, HU, HR, HA, HQ, HW))
+    add_h2(5,  string.format("local %s=%s[%s] %s[%s]=%s[%s]", HQ, K, HBX, HR, HA, ENV, HQ))
+    add_h2(6,  string.format("local %s=%s(%s)local %s=%s[%s] %s[%s]=%s[%s]", HW, RK_FN, HC, HQ, HR, HB, HR, HA, HQ, HW))
+    add_h2(7,  string.format("local %s=%s[%s] %s[%s]=%s[%s]", HQ, K, HBX, ENV, HQ, HR, HA))
+    add_h2(8,  string.format("local %s=%s[%s]local %s,%s=%s[1],%s[2] %s[%s]=%s[%s]", HU, UV, HB, HQ, HW, HU, HU, HQ, HW, HR, HA))
+    add_h2(9,  string.format("local %s=%s(%s)local %s=%s(%s)%s[%s][%s]=%s", HW, RK_FN, HC, HQ, RK_FN, HB, HR, HA, HQ, HW))
+    add_h2(10, string.format("local %s={} %s[%s]=%s", HQ, HR, HA, HQ))
+    add_h2(11, string.format("local %s=%s[%s] %s[%s+1]=%s local %s=%s(%s)%s[%s]=%s[%s]", HQ, HR, HB, HR, HA, HQ, HW, RK_FN, HC, HR, HA, HQ, HW))
+    add_h2(12, string.format("local %s=%s(%s)local %s=%s(%s)%s[%s]=%s+%s", HW, RK_FN, HC, HQ, RK_FN, HB, HR, HA, HW, HQ))
+    add_h2(13, string.format("local %s,%s=%s(%s),%s(%s)%s[%s]=%s-%s", HQ, HW, RK_FN, HB, RK_FN, HC, HR, HA, HQ, HW))
+    add_h2(14, string.format("local %s=%s(%s)local %s=%s(%s)%s[%s]=%s*%s", HW, RK_FN, HC, HQ, RK_FN, HB, HR, HA, HW, HQ))
+    add_h2(15, string.format("local %s,%s=%s(%s),%s(%s)%s[%s]=%s/%s", HQ, HW, RK_FN, HB, RK_FN, HC, HR, HA, HQ, HW))
+    add_h2(16, string.format("local %s,%s=%s(%s),%s(%s)%s[%s]=%s%%%s", HQ, HW, RK_FN, HB, RK_FN, HC, HR, HA, HQ, HW))
+    add_h2(17, string.format("local %s,%s=%s(%s),%s(%s)%s[%s]=%s^%s", HQ, HW, RK_FN, HB, RK_FN, HC, HR, HA, HQ, HW))
+    add_h2(18, string.format("local %s=%s[%s] %s[%s]=-%s", HQ, HR, HB, HR, HA, HQ))
+    add_h2(19, string.format("if %s[%s] then %s[%s]=false else %s[%s]=true end", HR, HB, HR, HA, HR, HA))
+    add_h2(20, string.format("local %s=%s[%s] %s[%s]=#%s", HQ, HR, HB, HR, HA, HQ))
+    add_h2(21, string.format("local %s=%s[%s]local %s=%s+1 while %s<=%s do %s=%s..%s[%s] %s=%s+1 end %s[%s]=%s", HS, HR, HB, HI, HB, HI, HC, HS, HS, HR, HI, HI, HI, HR, HA, HS))
+    add_h2(22, string.format("local %s=%s %s=%s+%s", HQ, HSBX, PC, PC, HQ))
+    add_h2(23, string.format("local %s=%s(%s)local %s=%s(%s)if(%s==%s)~=(%s~=0)then %s=%s+1 end", HW, RK_FN, HC, HQ, RK_FN, HB, HQ, HW, HA, PC, PC))
+    add_h2(24, string.format("local %s,%s=%s(%s),%s(%s)if(%s<%s)~=(%s~=0)then %s=%s+1 end", HQ, HW, RK_FN, HB, RK_FN, HC, HQ, HW, HA, PC, PC))
+    add_h2(25, string.format("local %s,%s=%s(%s),%s(%s)if(%s<=%s)~=(%s~=0)then %s=%s+1 end", HQ, HW, RK_FN, HB, RK_FN, HC, HQ, HW, HA, PC, PC))
+    add_h2(26, string.format("local %s=not %s[%s]if %s==(%s~=0)then %s=%s+1 end", HQ, HR, HA, HQ, HC, PC, PC))
+    add_h2(27, string.format("local %s=not %s[%s]if %s==(%s~=0)then %s=%s+1 else %s[%s]=%s[%s]end", HQ, HR, HB, HQ, HC, PC, PC, HR, HA, HR, HB))
+    add_h2(28, string.format("local %s={}local %s=(%s==0)and(%s-%s)or(%s-1)for %s=1,%s do %s[%s]=%s[%s+%s]end local %s=%s[%s]local %s=%s(%s(%s(%s,1,%s)))local %s=%s[0]if %s==0 then %s=%s+%s-1 for %s=1,%s do %s[%s+%s-1]=%s[%s]end else for %s=1,%s-1 do %s[%s+%s-1]=%s[%s]end end",
+        HG, HN, HB, TOP, HA, HB, HI, HN, HG, HI, HR, HA, HI, HQ, HR, HA, HR_L, PK, HQ, UPK, HG, HN, HL, HR_L, HC, TOP, HA, HL, HI, HL, HR, HA, HI, HR_L, HI, HI, HC, HR, HA, HI, HR_L, HI))
+    add_h2(29, string.format("local %s={}local %s=(%s==0)and(%s-%s)or(%s-1)for %s=1,%s do %s[%s]=%s[%s+%s]end local %s=%s[%s] %s(0)if %s[%d]then for %s=1,#%s do %s[%s]=0 end end return true,%s(%s(%s,1,%s))",
+        HG, HN, HB, TOP, HA, HB, HI, HN, HG, HI, HR, HA, HI, HQ, HR, HA, CL, PR, pkeys.rt, HI, INS, INS, HI, HQ, UPK, HG, HN))
+    add_h2(30, string.format("%s(0)if %s[%d]then for %s=1,#%s do %s[%s]=0 end end local %s=(%s==0)and(%s-%s+1)or(%s-1)local %s={}for %s=1,%s do %s[%s]=%s[%s+%s-1]end return true,%s(%s,1,%s)",
+        CL, PR, pkeys.rt, HI, INS, INS, HI, HN, HB, TOP, HA, HB, HR_L, HI, HN, HR_L, HI, HR, HA, HI, UPK, HR_L, HN))
+    add_h2(31, string.format("local %s=%s[%s+2]local %s=%s[%s]+%s %s[%s]=%s local %s=%s[%s+1]if(%s>0 and %s<=%s)or(%s<=0 and %s>=%s)then %s=%s+%s %s[%s+3]=%s end",
+        HS, HR, HA, HW, HR, HA, HS, HR, HA, HW, HL, HR, HA, HS, HW, HL, HS, HW, HL, PC, PC, HSBX, HR, HA, HW))
+    add_h2(32, string.format("local %s=%s[%s]local %s=%s[%s+2]%s[%s]=%s-%s local %s=%s %s=%s+%s", HW, HR, HA, HS, HR, HA, HR, HA, HW, HS, HQ, HSBX, PC, PC, HQ))
+    add_h2(33, string.format("local %s,%s,%s=%s[%s],%s[%s+1],%s[%s+2]local %s={%s(%s,%s)}for %s=1,%s do %s[%s+2+%s]=%s[%s]end if %s[%s+3]~=nil then %s[%s+2]=%s[%s+3]else %s=%s+1 end",
+        HCB, HS, HVAR, HR, HA, HR, HA, HR, HA, HR_L, HCB, HS, HVAR, HI, HC, HR, HA, HI, HR_L, HI, HR, HA, HR, HA, HR, HA, PC, PC))
+    add_h2(34, string.format("local %s=(%s==0)and(%s-%s)or %s if %s==0 then local %s=(%s>1)and(%s[%s-1]or 0)or 0 local %s=%s[%s]local %s=%s(%s,%s)%s=%s+1 local %s=(%s-%s)%%%s if %s<0 then %s=%s+%s end local _,_,_,_,%s=%s(%s,%s,%s)%s=%s end local %s=(%s-1)*50 local %s=%s[%s]for %s=1,%s do %s[%s+%s]=%s[%s+%s]end",
+        HN, HB, TOP, HA, HB, HC, HPE, PC, INS, PC, HE, INS, PC, HNK, NEXTK, PC, HPE, PC, PC, HNW, HE, HNK, KMOD_S, HNW, HNW, HNW, KMOD_S, HCBX, PRS, HNW, HPE, LAY, HC, HCBX, HO, HC, HT, HR, HA, HI, HN, HT, HO, HI, HR, HA, HI))
+    add_h2(35, string.format("local %s=%s %s(%s)", HQ, HA, CL, HQ))
+    add_h2(36, string.format("local %s=%s[%s]local %s={}for %s=0,%s[%d]-1 do local %s=(%s>1)and(%s[%s-1]or 0)or 0 local %s=%s[%s]local %s=%s(%s,%s)%s=%s+1 local %s=(%s-%s)%%%s if %s<0 then %s=%s+%s end local %s,_,%s=%s(%s,%s,%s)local %s=(%d+(%s-1)*37+%s)%%256 %s=((%s-%s-%s)*%s)%%256 if %s==%d or %s==%d then if not %s[%s]then %s[%s]={%s,%s}end %s[%s]=%s[%s]else %s[%s]=%s[%s]end end %s[%s]=%s(%s,%s,%s)",
+        HP, PS, HBX, HUV, HI, HP, pkeys.up, HPE, PC, INS, PC, HE, INS, PC, HNK, NEXTK, PC, HPE, PC, PC, HNW, HE, HNK, KMOD_S, HNW, HNW, HNW, KMOD_S, HOP, HPB, PRS, HNW, HPE, LAY, V.hrok, dgk.dg_init, PC, HPE, HOP, HOP, V.hrok, V.poa, V.pom, HOP, O[0], HOP, O2[0], OUV, HPB, OUV, HPB, HR, HPB, HUV, HI, OUV, HPB, HUV, HI, UV, HPB, HR, HA, WR, HP, ENV, HUV))
+    add_h2(37, string.format("local %s=(%s==0)and(%s-%s[%d])or(%s-1)for %s=1,%s do %s[%s+%s-1]=%s[%s[%d]+%s]end if %s==0 then %s=%s+%s-1 end",
         HN, HB, VLEN, PR, pkeys.np, HB, HI, HN, HR, HA, HI, VA, PR, pkeys.np, HI, HB, TOP, HA, HN))
 
     gen_rng:shuffle(d_entries)
@@ -957,11 +1016,17 @@ local @@DACC@@=@@DACC_INIT@@
     local total_handlers = #d_entries
     local key_sum = 0
     for i = 0, 37 do
-        local op = O[i]
-        if disp_mode == 0 or op < split_thr then
-            key_sum = key_sum + ((op * d_mul0 + d_add0) % 256)
+        local op1 = O[i]
+        if disp_mode == 0 or op1 < split_thr then
+            key_sum = key_sum + ((op1 * d_mul0 + d_add0) % 256)
         else
-            key_sum = key_sum + ((op * d_mul1 + d_add1) % 256)
+            key_sum = key_sum + ((op1 * d_mul1 + d_add1) % 256)
+        end
+        local op2 = O2[i]
+        if disp_mode == 0 or op2 < split_thr then
+            key_sum = key_sum + ((op2 * d_mul0 + d_add0) % 256)
+        else
+            key_sum = key_sum + ((op2 * d_mul1 + d_add1) % 256)
         end
     end
     for _, op in ipairs(decoy_ops) do
@@ -1250,9 +1315,9 @@ return _boot[@@MAGIC_BOOT@@](@@ROOTP@@,@@GENV@@,{},...)
         if trap_harness then
             lph_header = string.format("-- [0x%08x%08x]", gen_rng:next32(), gen_rng:next32())
         elseif lph_ver == 14 then
-            lph_header = "-- Generated by AzureVM v2.3.0 (template mode 14)"
+            lph_header = "-- Generated by AzureVM v3.0.0 (template mode 14)"
         else
-            lph_header = "-- This file was protected using Azure VM v2.3.0 (Luraph v15.2 Parity) [https://github.com/LionHub-Pino/AzureVM]"
+            lph_header = "-- This file was protected using Azure VM v3.0.0 (Pure VM - Luraph v15.2 Parity) [https://github.com/LionHub-Pino/AzureVM]"
         end
     else
         if not lph_header:match("^%-%-") then

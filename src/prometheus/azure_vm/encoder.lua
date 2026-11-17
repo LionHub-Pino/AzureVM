@@ -336,16 +336,24 @@ function Encoder.new(seed)
     local rng = make_prng(seed, 0)
     self._rng = rng
 
-    -- Dynamic Opcode Scrambling (0..37 mapped to unique 1..250)
+    -- Dynamic Multi-Handler Opcode Scrambling (0..37 mapped to 2 unique variants in 1..250)
     local used = {}
     self.opcode_map = {}
     self.reverse_op_map = {}
+    self.opcode_map2 = {}
+    self.reverse_op_map2 = {}
     for op = 0, 37 do
-        local r
-        repeat r = rng:range(1, 250) until not used[r]
-        used[r] = true
-        self.opcode_map[op] = r
-        self.reverse_op_map[r] = op
+        local r1
+        repeat r1 = rng:range(1, 250) until not used[r1]
+        used[r1] = true
+        self.opcode_map[op] = r1
+        self.reverse_op_map[r1] = op
+
+        local r2
+        repeat r2 = rng:range(1, 250) until not used[r2]
+        used[r2] = true
+        self.opcode_map2[op] = r2
+        self.reverse_op_map2[r2] = op
     end
 
     -- Legacy fields kept for encode_prototype whitebox compatibility
@@ -524,7 +532,8 @@ function Encoder:encode_prototype(proto)
     local prev_enc = 0
     for i, inst in ipairs(proto.instructions) do
         local std_op = inst.op
-        local global_op = self.opcode_map[std_op] or std_op
+        local variant = ((i + prev_enc) % 2 == 0) and 1 or 2
+        local global_op = (variant == 1) and (self.opcode_map[std_op] or std_op) or (self.opcode_map2[std_op] or self.opcode_map[std_op] or std_op)
         local rand_op = (global_op * op_mul + op_add) % 256
         local a, b, c = inst.a, inst.b, inst.c
         if std_op == 1 or std_op == 5 or std_op == 7 or std_op == 36

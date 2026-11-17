@@ -26,7 +26,11 @@ for i, inst in ipairs(root.instructions) do
     if mode == 1 then scrambled = math.floor(raw / 256) % 256
     else scrambled = raw % 256 end
     local mapped = ((scrambled - encoded.oa) * encoded.om) % 256
-    assert(encoder.reverse_op_map[mapped] == inst.op,
+    local resolved_op = encoder.reverse_op_map[mapped]
+    if resolved_op == nil and encoder.reverse_op_map2 then
+        resolved_op = encoder.reverse_op_map2[mapped]
+    end
+    assert(resolved_op == inst.op,
         "instruction layout does not follow prior ciphertext at position " .. i)
     previous = encrypted
 end

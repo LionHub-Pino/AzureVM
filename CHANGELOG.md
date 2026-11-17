@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.0.0] - 2026-11-17
+
+### Added
+- **Multi-Handler Opcode Splitting (`src/prometheus/azure_vm/encoder.lua` & `generator.lua`):**
+  - Upgraded VM architecture to Luraph v15.2 standard with Dual Polymorphic Opcode Splitting ($38 \times 2 = 76$ distinct handlers).
+  - Every Lua 5.1 opcode is mapped to two mutually exclusive global opcodes (`opcode_map` and `opcode_map2`) within range `1..250`.
+  - Instruction encoding dynamically interleaves opcode variants via alternating ciphertext feedback: `variant = ((i + prev_enc) % 2 == 0) and 1 or 2`.
+  - Both handlers are emitted with polymorphic variable binding and divergent evaluation paths, frustrating pattern matchers and control-flow reconstructors.
+  - Closures (`OP_CLOSURE`) seamlessly support multi-handler resolution for child prototype upvalue pseudo-instructions (`OP_MOVE` variants).
+- **Per-Activation Frame Salting & Register Bank Sealing:**
+  - Virtual register bank `REG` is sealed with `__metatable = false` to block introspection and runtime tampering.
+  - Storage mapping dynamically incorporates activation call-counter salting (`SHIFT = (SHIFT_SALT + PR[P_OA] * SHIFT_MUL + CALL_CNT * 79) % POW2_32`), ensuring isolated virtual memory offsets across nested execution frames.
+- **Pure VM Architecture & Zero-AST Presets (`src/presets.lua`):**
+  - Introduced `Luraph15_Ultra` (pure VM profile, zero AST pre-transform passes, template mode 15, multi-handler enabled, 1.8x decoy density, 3x initialization retries).
+  - Deprecated legacy Prometheus AST transformations (`EncryptStrings`, `ConstantArray`, `ProxifyLocals`) in core production paths, preventing AST deobfuscation signatures.
+  - Added CLI aliases: `--preset PureVM`, `--preset pure`, and `--preset Luraph15_Ultra`.
+- **Full Attribution Invariant:**
+  - Explicit recognition of **Prometheus** (by levno-710) as the underlying AST pipeline foundation.
+
 ## [2.3.0] - 2026-11-17
 
 ### Added

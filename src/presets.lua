@@ -281,8 +281,28 @@ local presets = {
 		},
 	},
 
+	-- =====================================================================
+    -- Luraph15_Ultra: Pure VM Architecture (Luraph v15.2 Parity)
+    -- Zero AST pre-mutation steps (no Prometheus signatures/patterns to deobfuscate).
+    -- 100% pure virtual machine virtualization with Multi-Handler Opcode Splitting (76 handlers),
+    -- dynamic register key rolling, frame activation salting, and sealed dispatch proxy.
+	-- =====================================================================
+	["Luraph15_Ultra"] = {
+		LuaVersion = "LuaU",
+		VarNamePrefix = "",
+		NameGenerator = "MangledShuffled",
+		PrettyPrint = false,
+		Seed = 0,
+		Steps = {
+			{ Name = "AzureVM", Settings = { LuraphVersion = 15, DecoyDensity = 1.8, RuntimeChecks = true, InitializationRetries = 2 } },
+			{ Name = "SafeRetryWrapper", Settings = { RetryCount = 3 } },
+		},
+	},
+
 }
 -- Standard and diversified aliases
+presets["PureVM"] = presets["Luraph15_Ultra"]
+presets["pure"] = presets["Luraph15_Ultra"]
 presets["Clean"] = presets["Minify"]
 presets["Lite"] = presets["Minify"]
 presets["Basic"] = presets["Weak"]
