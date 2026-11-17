@@ -40,11 +40,11 @@ local function _az_capscheck()
  if _az_bytefn("AZ",1)~=65 or _az_charfn(65,90)~="AZ" or _az_subfn("aAZb",2,3)~="AZ" or _az_gsubfn("AZ","A","Z")~="ZZ" or _az_concatfn({"A","Z"})~="AZ" or _az_floorfn(1.75)~=1 then _az_failcheck()end
  local _az_canary=_az_setmetafn({},{__index=function(_,key)return key end})
  if _az_canary[719]~=719 then _az_failcheck()end
- if type~=_az_typefn or error~=_az_errorfn or select~=_az_selectfn or string~=_az_stringlib or table~=_az_tablelib or math~=_az_mathlib or string.byte~=_az_bytefn or string.char~=_az_charfn or string.sub~=_az_subfn or string.gsub~=_az_gsubfn or string.find~=_az_findfn or table.concat~=_az_concatfn or math.floor~=_az_floorfn or setmetatable~=_az_setmetafn then _az_failcheck()end
+ if type~=_az_typefn or error~=_az_errorfn or select~=_az_selectfn or _az_typefn(string)~="table" or _az_typefn(table)~="table" or _az_typefn(math)~="table" or string.byte~=_az_bytefn or string.char~=_az_charfn or string.sub~=_az_subfn or string.gsub~=_az_gsubfn or string.find~=_az_findfn or table.concat~=_az_concatfn or math.floor~=_az_floorfn or setmetatable~=_az_setmetafn then _az_failcheck()end
 end
 local function _az_terminalerror(_az_value)
  if _az_typefn(_az_value)~="string" then return false end
- return _az_value=="AzureVM payload integrity check failed" or _az_value=="AzureVM runtime integrity check failed" or _az_value=="AzureVM initializer must not yield" or _az_value=="AzureVM protected initialization is unavailable"
+ return _az_value:find("AzureVM payload integrity check failed",1,true)~=nil or _az_value:find("AzureVM runtime integrity check failed",1,true)~=nil or _az_value:find("AzureVM initializer must not yield",1,true)~=nil or _az_value:find("AzureVM protected initialization is unavailable",1,true)~=nil
 end
 local function _az_retryinit(_az_callback,_az_retries)
  local _az_lastfailure

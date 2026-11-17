@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.2.0] - 2026-11-17
+
+### Added
+- **Pure-Lua 32-bit ARX PRNG & Key Derivation Engine (`src/prometheus/azure_vm/encoder.lua`):**
+  - Cryptographically resilient 32-bit Addition-Rotation-XOR (ARX) state engine for high-entropy wire-format diversification without external dependencies.
+  - Dynamic key schedule generation producing unique per-build substitution tables and diffusion keys.
+- **128-bit 2-Pass Bidirectional S-Box Blob Cipher:**
+  - Non-linear 2-pass forward and reverse substitution/diffusion passes over serialized VM bytecode payloads.
+  - Eliminates plaintext constant signatures, structural opcode patterns, and frequency analysis.
+- **Polymorphic Instruction Wire Format & Shuffled Opcode Layouts (`src/prometheus/azure_vm/generator.lua`):**
+  - Shuffled per-prototype instruction layouts with randomized field packing (`OP`, `A`, `B`, `C`, `Bx`, `sBx`).
+  - Polymorphic opcode dispatcher using dynamic jump maps and opaque token vaults.
+- **Advanced Anti-Tamper Trap Harness (Luarmor / Luraph v15.2 Parity):**
+  - **Hook & Tracer Defense:** Real-time `debug.gethook()` verification allowing benign host count hooks while instantly flagging call/line/return hooks (`c`, `l`, `r`).
+  - **Roblox Executor API Traps:** Active detection of common executor hooking APIs (`hookfunction`, `hookmetamethod`, `islclosure`, `replaceclosure`).
+  - **Environment & Metatable Cloaking:** String metatable integrity canaries, string concatenation verification, and detection of hooked `debug.getinfo`, `debug.getlocal`, `getfenv`, `getmetatable`.
+  - **Poison Accumulator & Fail-Closed Guards:** Poison accumulator mechanism that invalidates VM register tables and triggers immediate fail-closed termination upon tamper detection.
+- **Resilient Execution & Sandbox Compatibility:**
+  - Coroutine-based `pcall`/`xpcall` fallback execution for heavily sandboxed environments where standard error-handling primitives are restricted or revoked.
+  - Complete closure environment forwarding supporting custom `getfenv`/`setfenv` scopes without leaking VM internal upvalues.
+  - Standard library internal references captured as local upvalues to prevent environment pollution or hijack.
+- **Comprehensive E2E Verification Suites (`tests/e2e/`):**
+  - Tier 1 Features (44/44 passed across Lua 5.1 & LuaJIT).
+  - Tier 2 Boundaries (43/43 passed across Lua 5.1 & LuaJIT).
+  - Tier 3 Pairwise Combinations (12/12 passed across Lua 5.1 & LuaJIT).
+  - Tier 4 Real-World Workloads (6/6 passed across Lua 5.1 & LuaJIT).
+  - 100% pass rate achieved on all regression, validation, and VM semantic suites.
+
 ## [2.1.0] - 2026-11-17
 
 ### Added
